@@ -76,7 +76,7 @@ function words(s){
   return String(s||'').toLowerCase().replace(/[^a-z0-9\s']/g,' ').split(/\s+/).filter(Boolean);
 }
 function meaningful(s){
-  var stop={the:1,a:1,an:1,is:1,are:1,am:1,my:1,me:1,i:1,you:1,your:1,what:1,whats:1,what's:1,who:1,do:1,does:1,did:1,have:1,has:1,remember:1,about:1,tell:1,know:1,of:1,to:1,for:1,and:1};
+  var stop={the:1,a:1,an:1,is:1,are:1,am:1,my:1,me:1,i:1,you:1,your:1,what:1,whats:1,"what's":1,who:1,do:1,does:1,did:1,have:1,has:1,remember:1,about:1,tell:1,know:1,of:1,to:1,for:1,and:1};
   return words(s).filter(function(w){return !stop[w] && w.length>1});
 }
 function bestMemory(message,memories){
