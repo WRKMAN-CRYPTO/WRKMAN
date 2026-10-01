@@ -1,5 +1,19 @@
 # WRKMAN Core
 
+## Heartbeat 0.5 — Lessons
+
+WRKMAN now has a persistent, inspectable Concept Book. It begins empty.
+
+Teach a relationship with:
+
+`teach CA means contract address`
+
+Inspect it with `concepts`, and remove a lesson with `unteach <term or concept number>`.
+
+Concept lessons are supplied to the active brain through `wrkman.brain.v1`, so learned equivalents can participate in memory retrieval. Memory stores facts, concepts store taught relationships, and the journal stores what WRKMAN actually did.
+
+The Concept Book ships empty. WRKMAN's first concept belongs to the person teaching him.
+
 This directory is the beginning of WRKMAN as a growing workshop intelligence.
 
 ## Heartbeat 0.4 — Subjects
