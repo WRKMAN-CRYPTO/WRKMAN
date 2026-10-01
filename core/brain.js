@@ -79,16 +79,31 @@ function meaningful(s){
   var stop={the:1,a:1,an:1,is:1,are:1,am:1,my:1,me:1,i:1,you:1,your:1,what:1,whats:1,"what's":1,who:1,do:1,does:1,did:1,have:1,has:1,remember:1,about:1,tell:1,know:1,of:1,to:1,for:1,and:1};
   return words(s).filter(function(w){return !stop[w] && w.length>1});
 }
+function queryShape(message){
+  var raw=String(message||'').toLowerCase();
+  var q=meaningful(raw);
+  var weak={favorite:1,favourite:1,like:1,likes:1};
+  var anchors=q.filter(function(w){return !weak[w]});
+  return {terms:q,anchors:anchors};
+}
 function bestMemory(message,memories){
-  var q=meaningful(message);
-  if(!q.length)return null;
-  var best=null,score=0;
+  var shape=queryShape(message);
+  if(!shape.terms.length)return null;
+  var best=null,bestScore=0;
   (memories||[]).forEach(function(m){
-    var mw=words(m.text),s=0;
-    q.forEach(function(w){if(mw.indexOf(w)!==-1)s++});
-    if(s>score){score=s;best=m}
+    var mw=words(m.text),termHits=0,anchorHits=0;
+    shape.terms.forEach(function(w){if(mw.indexOf(w)!==-1)termHits++});
+    shape.anchors.forEach(function(w){if(mw.indexOf(w)!==-1)anchorHits++});
+
+    // If the question contains a concrete subject/property such as "color" or
+    // "food", at least one such anchor must exist in the memory. Generic words
+    // such as "favorite" are never enough by themselves.
+    if(shape.anchors.length && anchorHits===0)return;
+
+    var score=(anchorHits*10)+termHits;
+    if(score>bestScore){bestScore=score;best={memory:m,score:score,anchorHits:anchorHits}}
   });
-  return score>0?{memory:best,score:score}:null;
+  return best;
 }
 var firstWords={
   id:'first-words',

@@ -2,25 +2,34 @@
 
 This directory is the beginning of WRKMAN as a growing workshop intelligence.
 
+## Heartbeat 0.4 — Subjects
+
+WRKMAN's first retrieval mistake taught the next lesson.
+
+With the memory `My favorite color is Red.`, Heartbeat 0.3 correctly answered `What's my favorite color?` but incorrectly returned the same memory for `What's my favorite food?`. The primitive retriever treated the shared word `favorite` as sufficient evidence.
+
+0.4 introduces **query anchors**. Generic relation words such as `favorite` may contribute to a match, but a question containing a concrete subject/property must share at least one concrete anchor with the candidate memory. Thus `color` can retrieve a color memory while `food` cannot retrieve it merely because both questions contain `favorite`.
+
+This is still lexical, not semantic understanding. That limitation is intentional and explicit.
+
+### Regression test
+
+With `My favorite color is Red.` stored:
+
+- `What's my favorite color?` → retrieve the color memory.
+- `What's my favorite food?` → `I do not know.`
+
 ## Heartbeat 0.3 — First Words
 
-WRKMAN now has his first active brain adapter: `first-words`.
+WRKMAN gained the deterministic `first-words` brain: greetings, identity responses, and basic memory retrieval.
 
-It is intentionally tiny and deterministic. It can recognize greetings, answer simple questions about its identity, and perform basic keyword retrieval over WRKMAN's own local memories. If the answer is not present, it says it does not know.
+### First cognitive failure
 
-This is **not** a trained language model and it has no general world knowledge. The point is to prove that the brain socket can host a useful interchangeable brain while WRKMAN retains ownership of identity, memory, tools, and truth rules.
-
-Try:
-
-- `Hey baby WRKMAN.`
-- `Who are you?`
-- `What do you remember about WorkinMan?`
-- store `My favorite color is green`, then ask `What's my favorite color?`
-- ask about something never stored and verify that WRKMAN says it does not know.
+0.3's keyword retrieval confused favorite color with favorite food. This failure is preserved here because it directly motivated 0.4.
 
 ## Heartbeat 0.2 — Brain Interface
 
-`brain.js` defines `wrkman.brain.v1`. A brain receives a standardized packet containing the current message, WRKMAN identity, local memories, observations, and recent journal entries. It returns normalized text and receives no direct tool authority.
+`brain.js` defines `wrkman.brain.v1`. Brains receive context but do not own WRKMAN's identity, memory, tools, or truth rules.
 
 ## Heartbeat 0.1 — Heartbeat
 
@@ -34,4 +43,4 @@ A capability is not considered real until it is implemented and testable.
 
 ## Growth rule
 
-WRKMAN grows in this repository. Git history is the fossil record. We add capabilities to the same creature instead of multiplying numbered copies.
+WRKMAN grows in this repository. Git history is the fossil record.
