@@ -12,6 +12,12 @@ With the memory `My favorite color is Red.`, Heartbeat 0.3 correctly answered `W
 
 This is still lexical, not semantic understanding. That limitation is intentional and explicit.
 
+### 0.4 field bug: split-brain cache
+
+The first phone test appeared to show 0.4 still confusing favorite food with favorite color. Inspection showed the 0.4 retrieval code on `main` already required the `food` anchor and could not produce that result. The page had updated to 0.4 while Safari reused a cached 0.3 `brain.js`.
+
+The brain script is now loaded with a heartbeat version query (`brain.js?v=0.4.0`). Future heartbeat changes must bump this asset version so the displayed core version and executing brain cannot silently diverge.
+
 ### Regression test
 
 With `My favorite color is Red.` stored:
