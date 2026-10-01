@@ -29,7 +29,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.4</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.5</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -59,7 +59,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 <div class="foot">Memory lives only in this browser for now. Repository access is public and read-only. Unknown stays unknown.</div>
 </main>
 
-<script src="brain.js?v=0.4.0"></script>
+<script src="brain.js?v=0.5.0"></script>
 <script>
 (function(){
 'use strict';
@@ -70,6 +70,7 @@ var BRANCH='main';
 var API='https://api.github.com/repos/'+OWNER+'/'+REPO;
 var MEMKEY='wrkman.core.memory.v1';
 var JKEY='wrkman.core.journal.v1';
+var CONCEPTKEY='wrkman.core.concepts.v1';
 var MAXJ=200;
 var observations=[];
 var brainBus=new WRKMANBrain.BrainBus().register(WRKMANBrain.none).register(WRKMANBrain.firstWords);
@@ -78,7 +79,7 @@ var log=document.getElementById('log');
 var input=document.getElementById('in');
 var identity={
   name:'WRKMAN',
-  version:'0.4.0',
+  version:'0.5.0',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -97,6 +98,8 @@ function safeParse(s,fallback){try{return JSON.parse(s)}catch(e){return fallback
 function loadMem(){return safeParse(localStorage.getItem(MEMKEY)||'[]',[])}
 function saveMem(v){localStorage.setItem(MEMKEY,JSON.stringify(v))}
 function loadJournal(){return safeParse(localStorage.getItem(JKEY)||'[]',[])}
+function loadConcepts(){return safeParse(localStorage.getItem(CONCEPTKEY)||'[]',[])}
+function saveConcepts(v){localStorage.setItem(CONCEPTKEY,JSON.stringify(v))}
 function journal(type,detail){
   var j=loadJournal();
   j.push({at:now(),type:type,detail:String(detail||'')});
@@ -134,7 +137,7 @@ async function loadIdentity(){
   }
 }
 function brainPacket(message){
-  return {protocol:WRKMANBrain.protocol,message:message,identity:identity,memories:loadMem(),observations:observations.slice(-12),recentJournal:loadJournal().slice(-20)};
+  return {protocol:WRKMANBrain.protocol,message:message,identity:identity,memories:loadMem(),concepts:loadConcepts(),observations:observations.slice(-12),recentJournal:loadJournal().slice(-20)};
 }
 async function askBrain(message){
   try{
@@ -162,6 +165,7 @@ function status(){
     'Brain: '+(brainBus.current()?brainBus.current().id:'NONE'),
     'General model: '+(identity.model||'NONE'),
     'Memory: '+mem.length+' local item'+(mem.length===1?'':'s'),
+    'Concepts: '+loadConcepts().length+' local lesson'+(loadConcepts().length===1?'':'s'),
     'Journal: '+j.length+' local event'+(j.length===1?'':'s'),
     'Repository: '+OWNER+'/'+REPO+' @ '+BRANCH+' (read-only)',
     'Rule: '+identity.hardRules[0]
@@ -171,6 +175,27 @@ function memories(){
   var m=loadMem();
   if(!m.length){say('wrk','I have no stored memories yet. Use: remember <something>');return}
   say('wrk',m.map(function(x){return '#'+x.id+'  '+x.text+'\n    '+x.at}).join('\n\n'));
+}
+function concepts(){
+  var c=loadConcepts();
+  if(!c.length){say('wrk','My Concept Book is empty. Teach me with: teach <term> means <term>');return}
+  say('wrk',c.map(function(x){return '#'+x.id+'  '+x.terms.join(' = ')+'\n    taught '+x.at}).join('\n\n'));
+}
+function teach(text){
+  var parts=text.split(/\s+means\s+/i).map(function(x){return x.trim()}).filter(Boolean);
+  if(parts.length!==2){say('wrk','Teach me one relationship at a time: teach <term> means <term>');return}
+  var c=loadConcepts(),id=c.reduce(function(n,x){return Math.max(n,x.id||0)},0)+1;
+  c.push({id:id,terms:[parts[0],parts[1]],at:now()});
+  saveConcepts(c);journal('concept-teach','#'+id);
+  say('wrk','Learned concept #'+id+': '+parts[0]+' = '+parts[1]+'.');
+}
+function unteach(term){
+  term=term.trim().replace(/^#/,'');
+  var c=loadConcepts(),next;
+  if(/^\d+$/.test(term))next=c.filter(function(x){return x.id!==Number(term)});
+  else next=c.filter(function(x){return !x.terms.some(function(t){return t.toLowerCase()===term.toLowerCase()})});
+  if(next.length===c.length){say('wrk','I could not find that concept.');return}
+  saveConcepts(next);journal('concept-unteach',term);say('wrk','Removed that concept lesson.');
 }
 function remember(text){
   text=text.trim();
@@ -224,6 +249,9 @@ function help(){
     'inspect',
     'read <repository path>',
     'remember <text>',
+    'teach <term> means <term>',
+    'concepts',
+    'unteach <term or concept number>',
     'memories',
     'forget <memory number>',
     'journal',
@@ -244,7 +272,10 @@ async function act(raw){
   if(low==='inspect'||low==='inspect self'||low==='inspect repository'||low==='read yourself'||low==='read repository')return inspect();
   if(low==='memories'||low==='recall'||low==='what do you remember?'||low==='what do you remember')return memories();
   if(low==='journal')return showJournal();
+  if(low==='concepts'||low==='concept book')return concepts();
   if(low==='brain'||low==='brain status')return brainStatus();
+  if(/^teach\s+/i.test(q))return teach(q.replace(/^teach\s+/i,''));
+  if(/^unteach\s+/i.test(q))return unteach(q.replace(/^unteach\s+/i,''));
   if(/^remember\s+/i.test(q))return remember(q.replace(/^remember\s+/i,''));
   if(/^forget\s+#?\d+\s*$/i.test(q))return forget(q.match(/\d+/)[0]);
   if(/^read\s+/i.test(q))return readFile(q.replace(/^read\s+/i,''));
