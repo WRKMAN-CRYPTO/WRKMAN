@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b0d">
+<title>WRKMAN Core</title>
+<style>
+:root{color-scheme:dark;--bg:#090b0d;--panel:#101419;--line:#2b3138;--ink:#f4f1e8;--muted:#8f9aa4;--amber:#ffb347;--green:#80d6a3;--red:#ff8073;--safeT:env(safe-area-inset-top,0px);--safeB:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+body{min-height:100dvh;background:radial-gradient(circle at 50% -10%,#2a2115 0,#111317 34%,#090b0d 72%)}
+.wrap{width:min(760px,100%);min-height:100dvh;margin:auto;padding:calc(16px + var(--safeT)) 14px calc(18px + var(--safeB));display:flex;flex-direction:column;gap:12px}
+header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;border:1px solid #76572f;border-radius:14px;display:grid;place-items:center;background:#17120d;box-shadow:inset 0 0 20px #ffb34710,0 8px 30px #0008}.mark svg{width:31px;height:31px}
+.kicker{font-size:10px;letter-spacing:.19em;color:var(--amber);font-weight:800}.title{margin:3px 0 0;font:800 21px/1 system-ui,-apple-system,sans-serif;letter-spacing:.11em}.sub{margin-top:6px;font-size:11px;color:var(--muted)}
+.status{display:flex;gap:6px;flex-wrap:wrap}.pill{border:1px solid var(--line);border-radius:999px;padding:6px 8px;font-size:9px;letter-spacing:.08em;color:#aeb7bf;background:#0d1014}.pill.good{border-color:#355846;color:var(--green)}.pill.warn{border-color:#6b512f;color:#ffc56f}
+.screen{flex:1;min-height:390px;border:1px solid var(--line);border-radius:18px;background:#0b0e11e8;box-shadow:0 20px 60px #0007;overflow:hidden;display:flex;flex-direction:column}
+.bar{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;background:#101419}.bar b{font-size:10px;letter-spacing:.15em}.pulse{display:flex;align-items:center;gap:6px;color:var(--green);font-size:9px}.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px #80d6a399;animation:p 1.7s ease-in-out infinite}@keyframes p{50%{opacity:.3;box-shadow:none}}
+#log{flex:1;overflow:auto;padding:13px 12px 18px;overscroll-behavior:contain}.row{margin:0 0 12px;line-height:1.5;font-size:12px;white-space:pre-wrap;word-break:break-word}.row .tag{font-size:9px;font-weight:900;letter-spacing:.11em;margin-right:7px}.me .tag{color:var(--amber)}.wrk .tag{color:var(--green)}.sys .tag{color:#77838e}.bad .tag{color:var(--red)}.muted{color:var(--muted)}.strong{color:#fff;font-weight:800}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.quick button,.send{border:1px solid var(--line);background:#11161b;color:#d9dfe4;border-radius:11px;min-height:42px;font:800 10px/1 ui-monospace,monospace;letter-spacing:.06em}.quick button:active,.send:active{transform:scale(.98);background:#171d23}
+.composer{display:grid;grid-template-columns:1fr auto;gap:8px}input{width:100%;min-height:48px;border:1px solid #343b43;border-radius:13px;background:#0d1115;color:#fff;padding:0 13px;font:13px ui-monospace,monospace;outline:none}input:focus{border-color:#8d6937;box-shadow:0 0 0 3px #ffb3470e}.send{padding:0 16px;color:#1b1207;background:var(--amber);border-color:#c6842d}
+.foot{font-size:9px;color:#69737c;line-height:1.45;text-align:center;padding:0 8px}
+@media(max-width:430px){.quick{grid-template-columns:repeat(2,1fr)}.screen{min-height:360px}.title{font-size:19px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+  <div class="mark" aria-label="WRKMAN W">
+    <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <div><div class="kicker">HEARTBEAT / 0.1</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+</header>
+
+<div class="status">
+  <span class="pill good">CORE ONLINE</span>
+  <span class="pill warn">MODEL: NONE</span>
+  <span class="pill">MEMORY: LOCAL</span>
+  <span class="pill">REPO: READ ONLY</span>
+</div>
+
+<section class="screen">
+  <div class="bar"><b>WORK LOG</b><span class="pulse"><span class="dot"></span>HEARTBEAT</span></div>
+  <div id="log" aria-live="polite"></div>
+</section>
+
+<div class="quick">
+  <button data-cmd="status">STATUS</button>
+  <button data-cmd="capabilities">CAPABILITIES</button>
+  <button data-cmd="inspect">INSPECT SELF</button>
+  <button data-cmd="memories">MEMORIES</button>
+</div>
+
+<form class="composer" id="form">
+  <input id="in" autocomplete="off" autocapitalize="sentences" spellcheck="true" placeholder="Tell WRKMAN something…">
+  <button class="send" type="submit">SEND</button>
+</form>
+
+<div class="foot">Memory lives only in this browser for now. Repository access is public and read-only. Unknown stays unknown.</div>
+</main>
+
+<script>
+(function(){
+'use strict';
+
+var OWNER='WRKMAN-CRYPTO';
+var REPO='WRKMAN';
+var BRANCH='main';
+var API='https://api.github.com/repos/'+OWNER+'/'+REPO;
+var MEMKEY='wrkman.core.memory.v1';
+var JKEY='wrkman.core.journal.v1';
+var MAXJ=200;
+var log=document.getElementById('log');
+var input=document.getElementById('in');
+var identity={
+  name:'WRKMAN',
+  version:'0.1.0',
+  born:'2026-10-01',
+  model:null,
+  hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
+  capabilities:[
+    'Report exactly what I can and cannot do.',
+    'Remember text in this browser across ordinary restarts.',
+    'Recall and remove those local memories.',
+    'Inspect the live WRKMAN GitHub repository.',
+    'Read UTF-8 text files from the repository.',
+    'Keep a local journal of boots, commands, reads, and memory changes.'
+  ]
+};
+
+function now(){return new Date().toISOString()}
+function safeParse(s,fallback){try{return JSON.parse(s)}catch(e){return fallback}}
+function loadMem(){return safeParse(localStorage.getItem(MEMKEY)||'[]',[])}
+function saveMem(v){localStorage.setItem(MEMKEY,JSON.stringify(v))}
+function loadJournal(){return safeParse(localStorage.getItem(JKEY)||'[]',[])}
+function journal(type,detail){
+  var j=loadJournal();
+  j.push({at:now(),type:type,detail:String(detail||'')});
+  if(j.length>MAXJ)j=j.slice(-MAXJ);
+  localStorage.setItem(JKEY,JSON.stringify(j));
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function say(kind,text){
+  var row=document.createElement('div');
+  row.className='row '+kind;
+  var tag=kind==='me'?'YOU':kind==='wrk'?'WRKMAN':kind==='bad'?'FAULT':'SYSTEM';
+  row.innerHTML='<span class="tag">'+tag+'</span>'+esc(text);
+  log.appendChild(row);
+  log.scrollTop=log.scrollHeight;
+}
+function base64ToUtf8(b64){
+  var bin=atob(b64.replace(/\n/g,''));
+  var bytes=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  return new TextDecoder('utf-8').decode(bytes);
+}
+async function api(path){
+  var r=await fetch(API+path,{headers:{'Accept':'application/vnd.github+json'}});
+  if(!r.ok)throw new Error('GitHub returned '+r.status);
+  return r.json();
+}
+async function loadIdentity(){
+  try{
+    var f=await api('/contents/core/identity.json?ref='+encodeURIComponent(BRANCH));
+    var remote=JSON.parse(base64ToUtf8(f.content));
+    identity=remote;
+    journal('identity','Loaded core/identity.json from repository.');
+  }catch(e){
+    journal('identity-fallback',e.message);
+  }
+}
+function capabilities(){
+  var lines=['I currently know how to:'];
+  identity.capabilities.forEach(function(x,i){lines.push((i+1)+'. '+x)});
+  lines.push('');
+  lines.push('I do not have a language model connected yet. If you ask for something outside those abilities, I will say I do not know how to do it.');
+  say('wrk',lines.join('\n'));
+}
+function status(){
+  var mem=loadMem(),j=loadJournal();
+  say('wrk',[
+    'Name: '+identity.name,
+    'Version: '+identity.version,
+    'Model: '+(identity.model||'NONE'),
+    'Memory: '+mem.length+' local item'+(mem.length===1?'':'s'),
+    'Journal: '+j.length+' local event'+(j.length===1?'':'s'),
+    'Repository: '+OWNER+'/'+REPO+' @ '+BRANCH+' (read-only)',
+    'Rule: '+identity.hardRules[0]
+  ].join('\n'));
+}
+function memories(){
+  var m=loadMem();
+  if(!m.length){say('wrk','I have no stored memories yet. Use: remember <something>');return}
+  say('wrk',m.map(function(x){return '#'+x.id+'  '+x.text+'\n    '+x.at}).join('\n\n'));
+}
+function remember(text){
+  text=text.trim();
+  if(!text){say('wrk','I need something after "remember".');return}
+  var m=loadMem();
+  var id=m.reduce(function(n,x){return Math.max(n,x.id||0)},0)+1;
+  m.push({id:id,text:text,at:now()});
+  saveMem(m);
+  journal('memory-write','#'+id+' '+text);
+  say('wrk','Stored locally as memory #'+id+'. I can recall it after an ordinary page or browser restart on this device.');
+}
+function forget(id){
+  var m=loadMem(),n=Number(id),next=m.filter(function(x){return x.id!==n});
+  if(next.length===m.length){say('wrk','I do not have memory #'+id+'.');return}
+  saveMem(next);journal('memory-delete','#'+id);say('wrk','Removed local memory #'+id+'.');
+}
+async function inspect(){
+  say('sys','Reading repository root…');
+  try{
+    var root=await api('/contents?ref='+encodeURIComponent(BRANCH));
+    var names=root.map(function(x){return (x.type==='dir'?'[dir] ':'[file] ')+x.path});
+    journal('repo-inspect',names.length+' root entries');
+    say('wrk','I can see '+names.length+' root entries in my live repository:\n\n'+names.join('\n')+'\n\nI can read a text file with: read <path>');
+  }catch(e){journal('repo-fault',e.message);say('bad','I could not inspect the repository: '+e.message)}
+}
+async function readFile(path){
+  path=path.trim().replace(/^\/+/,'');
+  if(!path||path.indexOf('..')!==-1){say('wrk','Give me a repository-relative path without "..".');return}
+  say('sys','Reading '+path+'…');
+  try{
+    var f=await api('/contents/'+path.split('/').map(encodeURIComponent).join('/')+'?ref='+encodeURIComponent(BRANCH));
+    if(Array.isArray(f)){say('wrk',path+' is a directory. Use "inspect" for the root for now.');return}
+    if(!f.content){say('wrk','I found '+path+', but I cannot decode it as a normal text file.');return}
+    var text=base64ToUtf8(f.content);
+    journal('repo-read',path+' '+text.length+' chars');
+    var limit=6500;
+    var tail=text.length>limit?'\n\n[Stopped after '+limit+' characters. I know the file is longer.]':'';
+    say('wrk','FILE '+path+'\n\n'+text.slice(0,limit)+tail);
+  }catch(e){journal('repo-fault',path+' '+e.message);say('bad','I could not read '+path+': '+e.message)}
+}
+function showJournal(){
+  var j=loadJournal().slice(-30);
+  if(!j.length){say('wrk','My journal is empty.');return}
+  say('wrk',j.map(function(x){return x.at+'  '+x.type+(x.detail?'  '+x.detail:'')}).join('\n'));
+}
+function help(){
+  say('wrk',[
+    'Commands I understand:',
+    'status',
+    'capabilities',
+    'inspect',
+    'read <repository path>',
+    'remember <text>',
+    'memories',
+    'forget <memory number>',
+    'journal',
+    'help',
+    '',
+    'Plain-language versions of "who are you?" and "what can you do?" also work.'
+  ].join('\n'));
+}
+async function act(raw){
+  var q=raw.trim();
+  if(!q)return;
+  say('me',q);journal('command',q);
+  var low=q.toLowerCase();
+  if(low==='help'||low==='?')return help();
+  if(low==='status'||low==='who are you?'||low==='who are you')return status();
+  if(low==='capabilities'||low==='what can you do?'||low==='what can you do'||low==='what do you know how to do?'||low==='what do you know how to do')return capabilities();
+  if(low==='inspect'||low==='inspect self'||low==='inspect repository'||low==='read yourself'||low==='read repository')return inspect();
+  if(low==='memories'||low==='recall'||low==='what do you remember?'||low==='what do you remember')return memories();
+  if(low==='journal')return showJournal();
+  if(/^remember\s+/i.test(q))return remember(q.replace(/^remember\s+/i,''));
+  if(/^forget\s+#?\d+\s*$/i.test(q))return forget(q.match(/\d+/)[0]);
+  if(/^read\s+/i.test(q))return readFile(q.replace(/^read\s+/i,''));
+  say('wrk','I do not know how to do that yet. No language model is connected, and I will not invent an answer.\n\nType "help" to see the abilities I actually have.');
+}
+
+document.getElementById('form').addEventListener('submit',function(e){e.preventDefault();var q=input.value;input.value='';act(q)});
+Array.prototype.forEach.call(document.querySelectorAll('[data-cmd]'),function(b){b.addEventListener('click',function(){act(b.getAttribute('data-cmd'))})});
+
+(async function boot(){
+  journal('boot','WRKMAN Core page loaded.');
+  say('sys','Power applied.');
+  await loadIdentity();
+  say('wrk','WRKMAN Core '+identity.version+' online.\nModel: NONE.\nMemory: local to this browser.\nRepository hands: READ ONLY.\n\nI am small on purpose. Type "capabilities" or press a button.');
+})();
+})();
+</script>
+</body>
+</html>
