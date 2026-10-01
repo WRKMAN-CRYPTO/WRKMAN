@@ -2,21 +2,27 @@
 
 This directory is the beginning of WRKMAN as a growing workshop intelligence.
 
-## Heartbeat 0.1
+## Heartbeat 0.2 — First Words
 
-The first version is intentionally small. It is not pretending to be a general AI.
+Heartbeat 0.2 separates **WRKMAN** from whatever model may eventually think for it.
 
-It can:
+`brain.js` defines `wrkman.brain.v1`: a tiny adapter contract. A brain receives a standardized packet containing the current message, WRKMAN identity, local memories, observations, and recent journal entries. It returns normalized text. It does **not** own WRKMAN's memory, tools, identity, or rules, and it receives no direct tool authority.
 
-- report its implemented capabilities and limitations;
-- persist simple memories in the browser's local storage;
-- recall and remove those memories after ordinary restarts;
-- inspect the live \`WRKMAN-CRYPTO/WRKMAN\` repository;
-- read UTF-8 text files from the repository;
-- keep a local event journal;
-- explicitly decline requests it does not know how to perform.
+The first registered adapter is deliberately `none`. That means the interface is real before a model is attached. Unknown requests still terminate honestly instead of being fabricated.
 
-It does **not** yet have a language model, write access, code execution, autonomous behavior, or cross-device memory.
+### Brain contract
+
+An adapter supplies:
+
+- `id` and `label`
+- `available()`
+- `think(packet)`
+
+The packet protocol is `wrkman.brain.v1`. Future local, laptop, API, or other backends can implement the same contract.
+
+## Heartbeat 0.1 — Heartbeat
+
+0.1 established persistent browser memory, a local journal, read-only repository inspection, text-file reading, explicit capabilities, and the rule **unknown stays unknown**.
 
 ## Epistemic rule
 
@@ -30,6 +36,6 @@ WRKMAN grows in this repository. Git history is the fossil record. We add capabi
 
 ## Run
 
-Open \`/core/\` through GitHub Pages, or serve the repository locally and open \`core/index.html\`.
+Open `/core/` through GitHub Pages, or serve the repository locally and open `core/index.html`.
 
 No build step and no dependencies are required.

@@ -29,12 +29,12 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.1</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.2</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
   <span class="pill good">CORE ONLINE</span>
-  <span class="pill warn">MODEL: NONE</span>
+  <span class="pill warn" id="brain-pill">BRAIN: NONE</span>
   <span class="pill">MEMORY: LOCAL</span>
   <span class="pill">REPO: READ ONLY</span>
 </div>
@@ -59,6 +59,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 <div class="foot">Memory lives only in this browser for now. Repository access is public and read-only. Unknown stays unknown.</div>
 </main>
 
+<script src="brain.js"></script>
 <script>
 (function(){
 'use strict';
@@ -70,11 +71,13 @@ var API='https://api.github.com/repos/'+OWNER+'/'+REPO;
 var MEMKEY='wrkman.core.memory.v1';
 var JKEY='wrkman.core.journal.v1';
 var MAXJ=200;
+var observations=[];
+var brainBus=new WRKMANBrain.BrainBus().register(WRKMANBrain.none);
 var log=document.getElementById('log');
 var input=document.getElementById('in');
 var identity={
   name:'WRKMAN',
-  version:'0.1.0',
+  version:'0.2.0',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -128,6 +131,20 @@ async function loadIdentity(){
   }catch(e){
     journal('identity-fallback',e.message);
   }
+}
+function brainPacket(message){
+  return {protocol:WRKMANBrain.protocol,message:message,identity:identity,memories:loadMem(),observations:observations.slice(-12),recentJournal:loadJournal().slice(-20)};
+}
+async function askBrain(message){
+  try{
+    var out=await brainBus.think(brainPacket(message));
+    journal('brain',out.brain+' '+out.confidence);
+    say('wrk',out.text);
+  }catch(e){journal('brain-fault',e.message);say('bad','Brain fault: '+e.message)}
+}
+function brainStatus(){
+  var b=brainBus.current();
+  say('wrk','Brain protocol: '+WRKMANBrain.protocol+'\nActive adapter: '+(b?b.id:'NONE')+'\n\nBrains are replaceable components. Identity, memory, tools, and truth rules belong to WRKMAN.');
 }
 function capabilities(){
   var lines=['I currently know how to:'];
@@ -208,6 +225,7 @@ function help(){
     'memories',
     'forget <memory number>',
     'journal',
+    'brain',
     'help',
     '',
     'Plain-language versions of "who are you?" and "what can you do?" also work.'
@@ -224,10 +242,11 @@ async function act(raw){
   if(low==='inspect'||low==='inspect self'||low==='inspect repository'||low==='read yourself'||low==='read repository')return inspect();
   if(low==='memories'||low==='recall'||low==='what do you remember?'||low==='what do you remember')return memories();
   if(low==='journal')return showJournal();
+  if(low==='brain'||low==='brain status')return brainStatus();
   if(/^remember\s+/i.test(q))return remember(q.replace(/^remember\s+/i,''));
   if(/^forget\s+#?\d+\s*$/i.test(q))return forget(q.match(/\d+/)[0]);
   if(/^read\s+/i.test(q))return readFile(q.replace(/^read\s+/i,''));
-  say('wrk','I do not know how to do that yet. No language model is connected, and I will not invent an answer.\n\nType "help" to see the abilities I actually have.');
+  return askBrain(q);
 }
 
 document.getElementById('form').addEventListener('submit',function(e){e.preventDefault();var q=input.value;input.value='';act(q)});
@@ -237,7 +256,8 @@ Array.prototype.forEach.call(document.querySelectorAll('[data-cmd]'),function(b)
   journal('boot','WRKMAN Core page loaded.');
   say('sys','Power applied.');
   await loadIdentity();
-  say('wrk','WRKMAN Core '+identity.version+' online.\nModel: NONE.\nMemory: local to this browser.\nRepository hands: READ ONLY.\n\nI am small on purpose. Type "capabilities" or press a button.');
+  document.getElementById('brain-pill').textContent='BRAIN: '+brainBus.current().id.toUpperCase();
+  say('wrk','WRKMAN Core '+identity.version+' online.\nBrain protocol: '+WRKMANBrain.protocol+'\nActive brain: '+brainBus.current().id.toUpperCase()+'\nMemory: local to this browser.\nRepository hands: READ ONLY.\n\nMy brain is now a replaceable component. Type "brain" to inspect it.');
 })();
 })();
 </script>
