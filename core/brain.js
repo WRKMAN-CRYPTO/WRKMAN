@@ -19,7 +19,8 @@ Packet contract:
   identity: object,
   memories: array,
   observations: array,
-  recentJournal: array
+  recentJournal: array,
+  concepts: array
 }
 */
 (function(global){
@@ -79,21 +80,41 @@ function meaningful(s){
   var stop={the:1,a:1,an:1,is:1,are:1,am:1,my:1,me:1,i:1,you:1,your:1,what:1,whats:1,"what's":1,who:1,do:1,does:1,did:1,have:1,has:1,remember:1,about:1,tell:1,know:1,of:1,to:1,for:1,and:1};
   return words(s).filter(function(w){return !stop[w] && w.length>1});
 }
-function queryShape(message){
+function conceptMap(concepts){
+  var map={};
+  (concepts||[]).forEach(function(c){
+    var terms=(c.terms||[]).map(function(t){return String(t).toLowerCase().trim()}).filter(Boolean);
+    terms.forEach(function(t){map[t]=terms});
+  });
+  return map;
+}
+function expandTerms(list,concepts){
+  var map=conceptMap(concepts),out=[];
+  list.forEach(function(term){
+    if(out.indexOf(term)===-1)out.push(term);
+    (map[term]||[]).forEach(function(x){if(out.indexOf(x)===-1)out.push(x)});
+  });
+  return out;
+}
+function phrasePresent(text,term){
+  var hay=' '+String(text||'').toLowerCase().replace(/[^a-z0-9\s']/g,' ').replace(/\s+/g,' ').trim()+' ';
+  return hay.indexOf(' '+term+' ')!==-1;
+}
+function queryShape(message,concepts){
   var raw=String(message||'').toLowerCase();
   var q=meaningful(raw);
   var weak={favorite:1,favourite:1,like:1,likes:1};
   var anchors=q.filter(function(w){return !weak[w]});
-  return {terms:q,anchors:anchors};
+  return {terms:expandTerms(q,concepts),anchors:expandTerms(anchors,concepts)};
 }
-function bestMemory(message,memories){
-  var shape=queryShape(message);
+function bestMemory(message,memories,concepts){
+  var shape=queryShape(message,concepts);
   if(!shape.terms.length)return null;
   var best=null,bestScore=0;
   (memories||[]).forEach(function(m){
-    var mw=words(m.text),termHits=0,anchorHits=0;
-    shape.terms.forEach(function(w){if(mw.indexOf(w)!==-1)termHits++});
-    shape.anchors.forEach(function(w){if(mw.indexOf(w)!==-1)anchorHits++});
+    var termHits=0,anchorHits=0;
+    shape.terms.forEach(function(w){if(phrasePresent(m.text,w))termHits++});
+    shape.anchors.forEach(function(w){if(phrasePresent(m.text,w))anchorHits++});
 
     // If the question contains a concrete subject/property such as "color" or
     // "food", at least one such anchor must exist in the memory. Generic words
@@ -119,7 +140,7 @@ var firstWords={
       return {text:'I am WRKMAN. My brain is a replaceable component. My identity, memory, tools, journal, and truth rules belong to WRKMAN.',confidence:'certain',meta:{kind:'identity'}};
     }
     if(/\b(remember|know)\b/.test(q) || /^(what|who|where|when)\b/.test(q)){
-      var hit=bestMemory(raw,packet.memories);
+      var hit=bestMemory(raw,packet.memories,packet.concepts);
       if(hit){
         return {text:'I found this in my memory: "'+hit.memory.text+'"',confidence:'memory-grounded',meta:{kind:'memory',memoryId:hit.memory.id,score:hit.score}};
       }
