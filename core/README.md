@@ -2,23 +2,25 @@
 
 This directory is the beginning of WRKMAN as a growing workshop intelligence.
 
-## Heartbeat 0.2 — First Words
+## Heartbeat 0.3 — First Words
 
-Heartbeat 0.2 separates **WRKMAN** from whatever model may eventually think for it.
+WRKMAN now has his first active brain adapter: `first-words`.
 
-`brain.js` defines `wrkman.brain.v1`: a tiny adapter contract. A brain receives a standardized packet containing the current message, WRKMAN identity, local memories, observations, and recent journal entries. It returns normalized text. It does **not** own WRKMAN's memory, tools, identity, or rules, and it receives no direct tool authority.
+It is intentionally tiny and deterministic. It can recognize greetings, answer simple questions about its identity, and perform basic keyword retrieval over WRKMAN's own local memories. If the answer is not present, it says it does not know.
 
-The first registered adapter is deliberately `none`. That means the interface is real before a model is attached. Unknown requests still terminate honestly instead of being fabricated.
+This is **not** a trained language model and it has no general world knowledge. The point is to prove that the brain socket can host a useful interchangeable brain while WRKMAN retains ownership of identity, memory, tools, and truth rules.
 
-### Brain contract
+Try:
 
-An adapter supplies:
+- `Hey baby WRKMAN.`
+- `Who are you?`
+- `What do you remember about WorkinMan?`
+- store `My favorite color is green`, then ask `What's my favorite color?`
+- ask about something never stored and verify that WRKMAN says it does not know.
 
-- `id` and `label`
-- `available()`
-- `think(packet)`
+## Heartbeat 0.2 — Brain Interface
 
-The packet protocol is `wrkman.brain.v1`. Future local, laptop, API, or other backends can implement the same contract.
+`brain.js` defines `wrkman.brain.v1`. A brain receives a standardized packet containing the current message, WRKMAN identity, local memories, observations, and recent journal entries. It returns normalized text and receives no direct tool authority.
 
 ## Heartbeat 0.1 — Heartbeat
 
@@ -33,9 +35,3 @@ A capability is not considered real until it is implemented and testable.
 ## Growth rule
 
 WRKMAN grows in this repository. Git history is the fossil record. We add capabilities to the same creature instead of multiplying numbered copies.
-
-## Run
-
-Open `/core/` through GitHub Pages, or serve the repository locally and open `core/index.html`.
-
-No build step and no dependencies are required.

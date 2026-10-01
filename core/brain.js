@@ -71,5 +71,48 @@ var none={
   }
 };
 
-global.WRKMANBrain={BrainBus:BrainBus,none:none,protocol:'wrkman.brain.v1'};
+
+function words(s){
+  return String(s||'').toLowerCase().replace(/[^a-z0-9\s']/g,' ').split(/\s+/).filter(Boolean);
+}
+function meaningful(s){
+  var stop={the:1,a:1,an:1,is:1,are:1,am:1,my:1,me:1,i:1,you:1,your:1,what:1,whats:1,what's:1,who:1,do:1,does:1,did:1,have:1,has:1,remember:1,about:1,tell:1,know:1,of:1,to:1,for:1,and:1};
+  return words(s).filter(function(w){return !stop[w] && w.length>1});
+}
+function bestMemory(message,memories){
+  var q=meaningful(message);
+  if(!q.length)return null;
+  var best=null,score=0;
+  (memories||[]).forEach(function(m){
+    var mw=words(m.text),s=0;
+    q.forEach(function(w){if(mw.indexOf(w)!==-1)s++});
+    if(s>score){score=s;best=m}
+  });
+  return score>0?{memory:best,score:score}:null;
+}
+var firstWords={
+  id:'first-words',
+  label:'First Words',
+  available:async function(){return true},
+  think:async function(packet){
+    var raw=String(packet.message||'').trim();
+    var q=raw.toLowerCase().replace(/[.!?]+$/,'').trim();
+    if(/^(hi|hey|hello|hiya|howdy)\b/.test(q)){
+      return {text:'Hey. I am WRKMAN. I am still very small, but I am listening.',confidence:'certain',meta:{kind:'greeting'}};
+    }
+    if(/^(who are you|what are you|tell me about yourself)$/.test(q)){
+      return {text:'I am WRKMAN. My brain is a replaceable component. My identity, memory, tools, journal, and truth rules belong to WRKMAN.',confidence:'certain',meta:{kind:'identity'}};
+    }
+    if(/\b(remember|know)\b/.test(q) || /^(what|who|where|when)\b/.test(q)){
+      var hit=bestMemory(raw,packet.memories);
+      if(hit){
+        return {text:'I found this in my memory: "'+hit.memory.text+'"',confidence:'memory-grounded',meta:{kind:'memory',memoryId:hit.memory.id,score:hit.score}};
+      }
+      return {text:'I do not know. I could not find an answer in my memory.',confidence:'certain',meta:{kind:'unknown-memory'}};
+    }
+    return {text:'I heard you, but I do not understand that well enough to answer yet.',confidence:'certain',meta:{kind:'unknown-language'}};
+  }
+};
+
+global.WRKMANBrain={BrainBus:BrainBus,none:none,firstWords:firstWords,protocol:'wrkman.brain.v1'};
 })(window);
