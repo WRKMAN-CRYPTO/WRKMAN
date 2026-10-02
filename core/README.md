@@ -1,5 +1,18 @@
 # WRKMAN Core
 
+## Heartbeat 0.6 — Phrases
+
+The first taught concept exposed a parser boundary: WRKMAN stored `CA = contract address`, but a question containing `contract address` was split into `contract` and `address` before concept lookup.
+
+0.6 lets the Concept Book listen first. Taught multi-word terms are recognized in the raw question as phrases, added as concrete anchors, and then expanded through their taught equivalents. Ordinary single-word parsing remains in place.
+
+Field regression test with the existing lesson and memory:
+
+- Concept: `CA = contract address`
+- Memory: `$WRKMAN CA: <address>`
+- `What's my contract address?` → should retrieve the CA memory.
+- An unrelated untaught subject → should remain unknown.
+
 ## Heartbeat 0.5 — Lessons
 
 WRKMAN now has a persistent, inspectable Concept Book. It begins empty.
