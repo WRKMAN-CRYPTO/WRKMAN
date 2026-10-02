@@ -1,6 +1,6 @@
 {
   "name": "WRKMAN",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "born": "2026-10-01",
   "model": null,
   "brainProtocol": "wrkman.brain.v1",
@@ -21,6 +21,7 @@
     "Persist user-taught term relationships in a local Concept Book.",
     "Inspect and remove learned concepts.",
     "Use learned equivalent terms when retrieving memories.",
+    "Recognize taught multi-word concepts inside ordinary questions before word-level parsing.",
     "Inspect the live WRKMAN GitHub repository.",
     "Read UTF-8 text files from the repository.",
     "Keep a local journal.",
@@ -30,7 +31,7 @@
   "limitations": [
     "No general language model is connected.",
     "First Words uses deterministic language rules, not a trained neural model.",
-    "Concept equivalence is explicitly taught rather than inferred.",
+    "Concept equivalence and phrases are explicitly taught rather than inferred.",
     "Memory and concepts are currently local to one browser/device.",
     "Repository access is read-only.",
     "I cannot create or edit files.",
