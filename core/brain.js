@@ -100,11 +100,27 @@ function phrasePresent(text,term){
   var hay=' '+String(text||'').toLowerCase().replace(/[^a-z0-9\s']/g,' ').replace(/\s+/g,' ').trim()+' ';
   return hay.indexOf(' '+term+' ')!==-1;
 }
+function taughtPhrases(message,concepts){
+  var raw=' '+String(message||'').toLowerCase().replace(/[^a-z0-9\s']/g,' ').replace(/\s+/g,' ').trim()+' ';
+  var found=[];
+  (concepts||[]).forEach(function(c){
+    (c.terms||[]).forEach(function(term){
+      term=String(term).toLowerCase().trim();
+      if(term.indexOf(' ')!==-1 && raw.indexOf(' '+term+' ')!==-1 && found.indexOf(term)===-1)found.push(term);
+    });
+  });
+  return found;
+}
 function queryShape(message,concepts){
   var raw=String(message||'').toLowerCase();
   var q=meaningful(raw);
+  var phrases=taughtPhrases(raw,concepts);
   var weak={favorite:1,favourite:1,like:1,likes:1};
   var anchors=q.filter(function(w){return !weak[w]});
+  phrases.forEach(function(p){
+    if(q.indexOf(p)===-1)q.push(p);
+    if(anchors.indexOf(p)===-1)anchors.push(p);
+  });
   return {terms:expandTerms(q,concepts),anchors:expandTerms(anchors,concepts)};
 }
 function bestMemory(message,memories,concepts){
