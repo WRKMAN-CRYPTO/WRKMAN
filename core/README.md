@@ -1,5 +1,12 @@
 # WRKMAN Core
 
+## Heartbeat 0.7 — Links
+
+WRKMAN now recognizes valid `http://` and `https://` addresses when rendering his work log and turns them into clickable links. URLs stored inside memories therefore remain ordinary memory text, but become directly visitable whenever WRKMAN displays or recalls them.
+
+Link rendering is deliberately separate from memory storage: the original text is preserved unchanged. Only HTTP(S) addresses become links, and opening one does not grant WRKMAN any new network authority.
+
+
 ## Heartbeat 0.6 — Phrases
 
 The first taught concept exposed a parser boundary: WRKMAN stored `CA = contract address`, but a question containing `contract address` was split into `contract` and `address` before concept lookup.
