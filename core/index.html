@@ -29,7 +29,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.8.1</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.9</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -59,7 +59,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 <div class="foot">Memory lives only in this browser for now. Repository access is public and read-only. Unknown stays unknown.</div>
 </main>
 
-<script src="brain.js?v=0.8.1"></script>
+<script src="brain.js?v=0.9.0"></script>
 <script>
 (function(){
 'use strict';
@@ -73,6 +73,7 @@ var MEMKEY='wrkman.core.memory.v1';
 var JKEY='wrkman.core.journal.v1';
 var CONCEPTKEY='wrkman.core.concepts.v1';
 var READKEY='wrkman.core.reading.v1';
+var VOCABKEY='wrkman.core.vocabulary.v1';
 var MAXJ=200;
 var observations=[];
 var brainBus=new WRKMANBrain.BrainBus().register(WRKMANBrain.none).register(WRKMANBrain.firstWords);
@@ -81,7 +82,7 @@ var log=document.getElementById('log');
 var input=document.getElementById('in');
 var identity={
   name:'WRKMAN',
-  version:'0.8.1',
+  version:'0.9.0',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -103,6 +104,8 @@ function saveMem(v){localStorage.setItem(MEMKEY,JSON.stringify(v))}
 function loadJournal(){return safeParse(localStorage.getItem(JKEY)||'[]',[])}
 function loadReading(){return safeParse(localStorage.getItem(READKEY)||'[]',[])}
 function saveReading(v){localStorage.setItem(READKEY,JSON.stringify(v))}
+function loadVocab(){return safeParse(localStorage.getItem(VOCABKEY)||'[]',[])}
+function saveVocab(v){localStorage.setItem(VOCABKEY,JSON.stringify(v))}
 function loadConcepts(){return safeParse(localStorage.getItem(CONCEPTKEY)||'[]',[])}
 function saveConcepts(v){localStorage.setItem(CONCEPTKEY,JSON.stringify(v))}
 function journal(type,detail){
@@ -269,6 +272,65 @@ function cleanPageText(html){
   var root=doc.querySelector('article,main,[role="main"]')||doc.body;
   return String(root?root.innerText:'').replace(/\n{3,}/g,'\n\n').replace(/[ \t]+/g,' ').trim();
 }
+function tokenizeReading(text){
+  var hits={},re=/[A-Za-z][A-Za-z0-9'-]*/g,m;
+  while((m=re.exec(String(text||'')))!==null){
+    var display=m[0],key=display.toLowerCase().replace(/^['-]+|['-]+$/g,'');
+    if(key.length<2)continue;
+    if(!hits[key])hits[key]={word:key,count:0};
+    hits[key].count++;
+  }
+  return Object.keys(hits).map(function(k){return hits[k]}).sort(function(a,b){return b.count-a.count||a.word.localeCompare(b.word)});
+}
+function ensureCandidates(item){
+  if(!Array.isArray(item.candidates))item.candidates=[];
+  if(!Array.isArray(item.rejectedCandidates))item.rejectedCandidates=[];
+}
+function scanWords(id){
+  var r=loadReading(),item=r.find(function(x){return x.id===Number(id)});
+  if(!item){say('wrk','I do not have Reading Bench source #'+id+'.');return}
+  if(!item.text){say('wrk','Source #'+id+' has no captured text for me to scan. Read it first.');return}
+  ensureCandidates(item);
+  var rejected={};item.rejectedCandidates.forEach(function(w){rejected[w]=1});
+  var approved={};loadVocab().forEach(function(v){approved[v.word]=1});
+  item.candidates=tokenizeReading(item.text).filter(function(x){return !rejected[x.word]&&!approved[x.word]});
+  item.scannedAt=now();saveReading(r);journal('vocab-scan','#'+id+' '+item.candidates.length+' candidates');
+  say('wrk','Scanned source #'+id+'.\nPotential vocabulary: '+item.candidates.length+' unique words.\n\nI counted strings only. I did not infer what any word means.\nUse: words '+id);
+}
+function showWords(id){
+  var r=loadReading(),item=r.find(function(x){return x.id===Number(id)});
+  if(!item){say('wrk','I do not have Reading Bench source #'+id+'.');return}
+  ensureCandidates(item);
+  if(!item.candidates.length){say('wrk','Source #'+id+' has no potential vocabulary list yet. Use: scan '+id);return}
+  var shown=item.candidates.slice(0,120);
+  say('wrk','POTENTIAL VOCABULARY · SOURCE #'+id+'\n'+shown.map(function(x){return x.word+'  ×'+x.count}).join('\n')+(item.candidates.length>shown.length?'\n\n['+(item.candidates.length-shown.length)+' more candidates not shown]':''));
+}
+function rejectWord(id,word){
+  word=String(word||'').toLowerCase().trim();var r=loadReading(),item=r.find(function(x){return x.id===Number(id)});
+  if(!item){say('wrk','I do not have Reading Bench source #'+id+'.');return}
+  ensureCandidates(item);var before=item.candidates.length;
+  item.candidates=item.candidates.filter(function(x){return x.word!==word});
+  if(before===item.candidates.length){say('wrk','I could not find "'+word+'" in source #'+id+' potential vocabulary.');return}
+  if(item.rejectedCandidates.indexOf(word)===-1)item.rejectedCandidates.push(word);
+  saveReading(r);journal('vocab-reject','#'+id+' '+word);say('wrk','Removed "'+word+'" from source #'+id+' potential vocabulary. It was not added to my vocabulary.');
+}
+function admitWord(id,word){
+  word=String(word||'').toLowerCase().trim();var r=loadReading(),item=r.find(function(x){return x.id===Number(id)});
+  if(!item){say('wrk','I do not have Reading Bench source #'+id+'.');return}
+  ensureCandidates(item);var hit=item.candidates.find(function(x){return x.word===word});
+  if(!hit){say('wrk','I could not find "'+word+'" in source #'+id+' potential vocabulary.');return}
+  var v=loadVocab(),existing=v.find(function(x){return x.word===word});
+  if(existing){if(existing.sources.indexOf(Number(id))===-1)existing.sources.push(Number(id));existing.occurrences+=hit.count}
+  else v.push({word:word,admittedAt:now(),sources:[Number(id)],occurrences:hit.count});
+  saveVocab(v);
+  r.forEach(function(src){ensureCandidates(src);src.candidates=src.candidates.filter(function(x){return x.word!==word})});
+  saveReading(r);journal('vocab-admit',word+' from #'+id);say('wrk','Admitted "'+word+'" to my vocabulary from source #'+id+'.\nI know I have encountered this word. I still do not claim to know what it means.');
+}
+function vocabulary(){
+  var v=loadVocab().slice().sort(function(a,b){return a.word.localeCompare(b.word)});
+  if(!v.length){say('wrk','My active vocabulary is empty. Potential words remain partitioned by source until you admit them.');return}
+  say('wrk','ACTIVE VOCABULARY\n'+v.map(function(x){return x.word+' · seen '+x.occurrences+'× · source'+(x.sources.length===1?' ':'s ')+x.sources.map(function(n){return '#'+n}).join(', ')}).join('\n'));
+}
 function readingBench(){
   var r=loadReading();
   if(!r.length){say('wrk','My Reading Bench is empty. Use: bench add <url>');return}
@@ -351,6 +413,11 @@ function help(){
     'bench move <source number> <position>',
     'bench note <source number> <your note>',
     'bench remove <source number>',
+    'scan <source number>',
+    'words <source number>',
+    'reject <source number> <word>',
+    'admit <source number> <word>',
+    'vocabulary',
     'brain',
     'help',
     '',
@@ -370,6 +437,11 @@ async function act(raw){
   if(low==='journal')return showJournal();
   if(low==='concepts'||low==='concept book')return concepts();
   if(low==='brain'||low==='brain status')return brainStatus();
+  if(low==='vocabulary'||low==='vocab')return vocabulary();
+  if(/^scan\s+#?\d+\s*$/i.test(q))return scanWords(q.match(/\d+/)[0]);
+  if(/^words\s+#?\d+\s*$/i.test(q))return showWords(q.match(/\d+/)[0]);
+  if(/^reject\s+#?\d+\s+[^\s]+\s*$/i.test(q)){var rp=q.match(/^reject\s+#?(\d+)\s+([^\s]+)\s*$/i);return rejectWord(rp[1],rp[2])}
+  if(/^admit\s+#?\d+\s+[^\s]+\s*$/i.test(q)){var ap=q.match(/^admit\s+#?(\d+)\s+([^\s]+)\s*$/i);return admitWord(ap[1],ap[2])}
   if(low==='bench'||low==='reading bench'||low==='reading')return readingBench();
   if(/^bench\s+add\s+/i.test(q))return benchAdd(q.replace(/^bench\s+add\s+/i,''));
   if(/^bench\s+read\s+#?\d+\s*$/i.test(q))return benchRead(q.match(/\d+/)[0]);
