@@ -1,6 +1,6 @@
 {
   "name": "WRKMAN",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "born": "2026-10-01",
   "model": null,
   "brainProtocol": "wrkman.brain.v1",
@@ -30,7 +30,8 @@
     "Swap brain adapters without changing WRKMAN identity, memory, concepts, or tools.",
     "Keep an ordered local Reading Bench of HTTP/HTTPS sources.",
     "Attach user notes to Reading Bench sources and reorder them without inventing semantic relationships.",
-    "Attempt to extract and locally preserve readable text from public web pages when browser access permits."
+    "Attempt to extract and locally preserve readable text from public web pages when browser access permits.",
+    "Fall back to a server-side public webpage reader when browser CORS blocks a Reading Bench source."
   ],
   "limitations": [
     "No general language model is connected.",
@@ -43,7 +44,7 @@
     "I cannot act autonomously.",
     "Brain adapters cannot directly invoke tools.",
     "I have no general world knowledge.",
-    "Many websites block browser-side cross-origin page reading; blocked sources remain saved but unread.",
-    "No semantic webpage summarizer is connected yet."
+    "No semantic webpage summarizer is connected yet.",
+    "Some sites may still reject automated server-side reading, require authentication, render content only after client-side JavaScript, or expose non-HTML documents."
   ]
 }
