@@ -1,0 +1,1 @@
+{"name":"wrkman-reader","version":"0.8.1","private":true,"scripts":{"start":"node server.js"},"dependencies":{"@mozilla/readability":"^0.6.0","jsdom":"^26.1.0"}}
