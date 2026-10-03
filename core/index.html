@@ -16,7 +16,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 .status{display:flex;gap:6px;flex-wrap:wrap}.pill{border:1px solid var(--line);border-radius:999px;padding:6px 8px;font-size:9px;letter-spacing:.08em;color:#aeb7bf;background:#0d1014}.pill.good{border-color:#355846;color:var(--green)}.pill.warn{border-color:#6b512f;color:#ffc56f}
 .screen{flex:1;min-height:390px;border:1px solid var(--line);border-radius:18px;background:#0b0e11e8;box-shadow:0 20px 60px #0007;overflow:hidden;display:flex;flex-direction:column}
 .bar{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;background:#101419}.bar b{font-size:10px;letter-spacing:.15em}.pulse{display:flex;align-items:center;gap:6px;color:var(--green);font-size:9px}.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px #80d6a399;animation:p 1.7s ease-in-out infinite}@keyframes p{50%{opacity:.3;box-shadow:none}}
-#log{flex:1;overflow:auto;padding:13px 12px 18px;overscroll-behavior:contain}.row{margin:0 0 12px;line-height:1.5;font-size:12px;white-space:pre-wrap;word-break:break-word}.row .tag{font-size:9px;font-weight:900;letter-spacing:.11em;margin-right:7px}.me .tag{color:var(--amber)}.wrk .tag{color:var(--green)}.sys .tag{color:#77838e}.bad .tag{color:var(--red)}.muted{color:var(--muted)}.strong{color:#fff;font-weight:800}
+#log{flex:1;overflow:auto;padding:13px 12px 18px;overscroll-behavior:contain}.row{margin:0 0 12px;line-height:1.5;font-size:12px;white-space:pre-wrap;word-break:break-word}.row .tag{font-size:9px;font-weight:900;letter-spacing:.11em;margin-right:7px}.me .tag{color:var(--amber)}.wrk .tag{color:var(--green)}.sys .tag{color:#77838e}.bad .tag{color:var(--red)}.muted{color:var(--muted)}.strong{color:#fff;font-weight:800}.row a{color:var(--amber);text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
 .quick{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.quick button,.send{border:1px solid var(--line);background:#11161b;color:#d9dfe4;border-radius:11px;min-height:42px;font:800 10px/1 ui-monospace,monospace;letter-spacing:.06em}.quick button:active,.send:active{transform:scale(.98);background:#171d23}
 .composer{display:grid;grid-template-columns:1fr auto;gap:8px}input{width:100%;min-height:48px;border:1px solid #343b43;border-radius:13px;background:#0d1115;color:#fff;padding:0 13px;font:13px ui-monospace,monospace;outline:none}input:focus{border-color:#8d6937;box-shadow:0 0 0 3px #ffb3470e}.send{padding:0 16px;color:#1b1207;background:var(--amber);border-color:#c6842d}
 .foot{font-size:9px;color:#69737c;line-height:1.45;text-align:center;padding:0 8px}
@@ -29,7 +29,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.6</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.7</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -59,7 +59,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 <div class="foot">Memory lives only in this browser for now. Repository access is public and read-only. Unknown stays unknown.</div>
 </main>
 
-<script src="brain.js?v=0.6.0"></script>
+<script src="brain.js?v=0.7.0"></script>
 <script>
 (function(){
 'use strict';
@@ -79,7 +79,7 @@ var log=document.getElementById('log');
 var input=document.getElementById('in');
 var identity={
   name:'WRKMAN',
-  version:'0.6.0',
+  version:'0.7.0',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -107,11 +107,33 @@ function journal(type,detail){
   localStorage.setItem(JKEY,JSON.stringify(j));
 }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function appendLinkedText(parent,text){
+  var re=/https?:\/\/[^\s<>"']+/gi,last=0,match;
+  while((match=re.exec(String(text)))!==null){
+    if(match.index>last)parent.appendChild(document.createTextNode(String(text).slice(last,match.index)));
+    var raw=match[0],trail='';
+    while(/[.,!?;:]$/.test(raw)){trail=raw.slice(-1)+trail;raw=raw.slice(0,-1)}
+    try{
+      var u=new URL(raw);
+      if(u.protocol==='http:'||u.protocol==='https:'){
+        var a=document.createElement('a');
+        a.href=u.href;a.textContent=raw;a.target='_blank';a.rel='noopener noreferrer';
+        parent.appendChild(a);
+      }else parent.appendChild(document.createTextNode(raw));
+    }catch(e){parent.appendChild(document.createTextNode(raw))}
+    if(trail)parent.appendChild(document.createTextNode(trail));
+    last=match.index+match[0].length;
+  }
+  if(last<String(text).length)parent.appendChild(document.createTextNode(String(text).slice(last)));
+}
 function say(kind,text){
   var row=document.createElement('div');
   row.className='row '+kind;
-  var tag=kind==='me'?'YOU':kind==='wrk'?'WRKMAN':kind==='bad'?'FAULT':'SYSTEM';
-  row.innerHTML='<span class="tag">'+tag+'</span>'+esc(text);
+  var label=kind==='me'?'YOU':kind==='wrk'?'WRKMAN':kind==='bad'?'FAULT':'SYSTEM';
+  var tag=document.createElement('span');
+  tag.className='tag';tag.textContent=label;
+  row.appendChild(tag);
+  appendLinkedText(row,text);
   log.appendChild(row);
   log.scrollTop=log.scrollHeight;
 }
