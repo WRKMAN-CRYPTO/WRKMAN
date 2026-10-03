@@ -29,7 +29,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.7</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.8</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -59,7 +59,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 <div class="foot">Memory lives only in this browser for now. Repository access is public and read-only. Unknown stays unknown.</div>
 </main>
 
-<script src="brain.js?v=0.7.0"></script>
+<script src="brain.js?v=0.8.0"></script>
 <script>
 (function(){
 'use strict';
@@ -71,6 +71,7 @@ var API='https://api.github.com/repos/'+OWNER+'/'+REPO;
 var MEMKEY='wrkman.core.memory.v1';
 var JKEY='wrkman.core.journal.v1';
 var CONCEPTKEY='wrkman.core.concepts.v1';
+var READKEY='wrkman.core.reading.v1';
 var MAXJ=200;
 var observations=[];
 var brainBus=new WRKMANBrain.BrainBus().register(WRKMANBrain.none).register(WRKMANBrain.firstWords);
@@ -79,7 +80,7 @@ var log=document.getElementById('log');
 var input=document.getElementById('in');
 var identity={
   name:'WRKMAN',
-  version:'0.7.0',
+  version:'0.8.0',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -89,7 +90,8 @@ var identity={
     'Recall and remove those local memories.',
     'Inspect the live WRKMAN GitHub repository.',
     'Read UTF-8 text files from the repository.',
-    'Keep a local journal of boots, commands, reads, and memory changes.'
+    'Keep a local journal of boots, commands, reads, and memory changes.',
+    'Keep an ordered local Reading Bench of web sources, notes, and extracted page text when browser access permits.'
   ]
 };
 
@@ -98,6 +100,8 @@ function safeParse(s,fallback){try{return JSON.parse(s)}catch(e){return fallback
 function loadMem(){return safeParse(localStorage.getItem(MEMKEY)||'[]',[])}
 function saveMem(v){localStorage.setItem(MEMKEY,JSON.stringify(v))}
 function loadJournal(){return safeParse(localStorage.getItem(JKEY)||'[]',[])}
+function loadReading(){return safeParse(localStorage.getItem(READKEY)||'[]',[])}
+function saveReading(v){localStorage.setItem(READKEY,JSON.stringify(v))}
 function loadConcepts(){return safeParse(localStorage.getItem(CONCEPTKEY)||'[]',[])}
 function saveConcepts(v){localStorage.setItem(CONCEPTKEY,JSON.stringify(v))}
 function journal(type,detail){
@@ -258,6 +262,59 @@ async function readFile(path){
     say('wrk','FILE '+path+'\n\n'+text.slice(0,limit)+tail);
   }catch(e){journal('repo-fault',path+' '+e.message);say('bad','I could not read '+path+': '+e.message)}
 }
+function cleanPageText(html){
+  var doc=new DOMParser().parseFromString(html,'text/html');
+  Array.prototype.forEach.call(doc.querySelectorAll('script,style,noscript,svg,nav,footer,header,form,aside'),function(n){n.remove()});
+  var root=doc.querySelector('article,main,[role="main"]')||doc.body;
+  return String(root?root.innerText:'').replace(/\n{3,}/g,'\n\n').replace(/[ \t]+/g,' ').trim();
+}
+function readingBench(){
+  var r=loadReading();
+  if(!r.length){say('wrk','My Reading Bench is empty. Use: bench add <url>');return}
+  say('wrk',r.map(function(x,i){return (i+1)+'. #'+x.id+'  '+(x.title||x.url)+'\n    '+x.status+' · '+x.url+(x.note?'\n    note: '+x.note:'')}).join('\n\n'));
+}
+async function benchAdd(raw){
+  raw=raw.trim();var url;
+  try{url=new URL(raw);if(url.protocol!=='http:'&&url.protocol!=='https:')throw new Error('protocol')}catch(e){say('wrk','Give me a full HTTP or HTTPS page link.');return}
+  var r=loadReading(),id=r.reduce(function(n,x){return Math.max(n,x.id||0)},0)+1;
+  var item={id:id,url:url.href,title:'',status:'saved · unread',text:'',addedAt:now(),readAt:null,note:''};
+  r.push(item);saveReading(r);journal('bench-add','#'+id+' '+url.href);
+  say('wrk','Added source #'+id+' to the end of my Reading Bench.\n'+url.href+'\n\nTrying to read it now…');
+  await benchRead(id);
+}
+async function benchRead(id){
+  var r=loadReading(),item=r.find(function(x){return x.id===Number(id)});
+  if(!item){say('wrk','I do not have Reading Bench source #'+id+'.');return}
+  try{
+    var res=await fetch(item.url,{headers:{'Accept':'text/html,text/plain'}});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    var html=await res.text(),text=cleanPageText(html);
+    if(text.length<120)throw new Error('No substantial readable text returned.');
+    var doc=new DOMParser().parseFromString(html,'text/html');
+    item.title=(doc.querySelector('title')||{}).textContent||item.url;
+    item.title=item.title.trim().slice(0,180);item.text=text.slice(0,120000);item.status='read · '+item.text.length+' chars';item.readAt=now();
+    saveReading(r);journal('bench-read','#'+item.id+' '+item.text.length+' chars');
+    say('wrk','Read source #'+item.id+'.\nTitle: '+item.title+'\nCaptured: '+item.text.length+' characters.\n\nThe page text is stored locally with its source. I do not have a semantic summarizer yet.');
+  }catch(e){
+    item.status='blocked · '+e.message;saveReading(r);journal('bench-blocked','#'+item.id+' '+e.message);
+    say('wrk','I saved source #'+item.id+', but I could not read the page from this browser.\nReason: '+e.message+'\n\nI will not claim I read blocked content.');
+  }
+}
+function benchMove(id,pos){
+  var r=loadReading(),i=r.findIndex(function(x){return x.id===Number(id)}),p=Math.max(1,Math.min(r.length,Number(pos)))-1;
+  if(i<0||!Number.isFinite(p)){say('wrk','Use: bench move <source number> <position>');return}
+  var x=r.splice(i,1)[0];r.splice(p,0,x);saveReading(r);journal('bench-move','#'+id+' to '+(p+1));say('wrk','Moved source #'+id+' to Reading Bench position '+(p+1)+'.');
+}
+function benchNote(id,note){
+  var r=loadReading(),x=r.find(function(v){return v.id===Number(id)});
+  if(!x){say('wrk','I do not have Reading Bench source #'+id+'.');return}
+  x.note=note.trim();saveReading(r);journal('bench-note','#'+id);say('wrk','Attached your note to source #'+id+'.');
+}
+function benchRemove(id){
+  var r=loadReading(),n=r.filter(function(x){return x.id!==Number(id)});
+  if(n.length===r.length){say('wrk','I do not have Reading Bench source #'+id+'.');return}
+  saveReading(n);journal('bench-remove','#'+id);say('wrk','Removed source #'+id+' from my Reading Bench.');
+}
 function showJournal(){
   var j=loadJournal().slice(-30);
   if(!j.length){say('wrk','My journal is empty.');return}
@@ -277,6 +334,12 @@ function help(){
     'memories',
     'forget <memory number>',
     'journal',
+    'bench',
+    'bench add <page url>',
+    'bench read <source number>',
+    'bench move <source number> <position>',
+    'bench note <source number> <your note>',
+    'bench remove <source number>',
     'brain',
     'help',
     '',
@@ -296,6 +359,12 @@ async function act(raw){
   if(low==='journal')return showJournal();
   if(low==='concepts'||low==='concept book')return concepts();
   if(low==='brain'||low==='brain status')return brainStatus();
+  if(low==='bench'||low==='reading bench'||low==='reading')return readingBench();
+  if(/^bench\s+add\s+/i.test(q))return benchAdd(q.replace(/^bench\s+add\s+/i,''));
+  if(/^bench\s+read\s+#?\d+\s*$/i.test(q))return benchRead(q.match(/\d+/)[0]);
+  if(/^bench\s+move\s+#?\d+\s+\d+\s*$/i.test(q)){var nums=q.match(/\d+/g);return benchMove(nums[0],nums[1])}
+  if(/^bench\s+note\s+#?\d+\s+/i.test(q)){var nid=q.match(/\d+/)[0];return benchNote(nid,q.replace(/^bench\s+note\s+#?\d+\s+/i,''))}
+  if(/^bench\s+remove\s+#?\d+\s*$/i.test(q))return benchRemove(q.match(/\d+/)[0]);
   if(/^teach\s+/i.test(q))return teach(q.replace(/^teach\s+/i,''));
   if(/^unteach\s+/i.test(q))return unteach(q.replace(/^unteach\s+/i,''));
   if(/^remember\s+/i.test(q))return remember(q.replace(/^remember\s+/i,''));
