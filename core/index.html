@@ -29,7 +29,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.8</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.8.1</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -59,7 +59,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 <div class="foot">Memory lives only in this browser for now. Repository access is public and read-only. Unknown stays unknown.</div>
 </main>
 
-<script src="brain.js?v=0.8.0"></script>
+<script src="brain.js?v=0.8.1"></script>
 <script>
 (function(){
 'use strict';
@@ -68,6 +68,7 @@ var OWNER='WRKMAN-CRYPTO';
 var REPO='WRKMAN';
 var BRANCH='main';
 var API='https://api.github.com/repos/'+OWNER+'/'+REPO;
+var READER='https://reader-production-afd3.up.railway.app';
 var MEMKEY='wrkman.core.memory.v1';
 var JKEY='wrkman.core.journal.v1';
 var CONCEPTKEY='wrkman.core.concepts.v1';
@@ -80,7 +81,7 @@ var log=document.getElementById('log');
 var input=document.getElementById('in');
 var identity={
   name:'WRKMAN',
-  version:'0.8.0',
+  version:'0.8.1',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -295,9 +296,19 @@ async function benchRead(id){
     item.title=item.title.trim().slice(0,180);item.text=text.slice(0,120000);item.status='read · '+item.text.length+' chars';item.readAt=now();
     saveReading(r);journal('bench-read','#'+item.id+' '+item.text.length+' chars');
     say('wrk','Read source #'+item.id+'.\nTitle: '+item.title+'\nCaptured: '+item.text.length+' characters.\n\nThe page text is stored locally with its source. I do not have a semantic summarizer yet.');
-  }catch(e){
-    item.status='blocked · '+e.message;saveReading(r);journal('bench-blocked','#'+item.id+' '+e.message);
-    say('wrk','I saved source #'+item.id+', but I could not read the page from this browser.\nReason: '+e.message+'\n\nI will not claim I read blocked content.');
+  }catch(browserError){
+    say('sys','Browser read blocked. Trying my server reader…');
+    try{
+      var rr=await fetch(READER+'/read?url='+encodeURIComponent(item.url));
+      var data=await rr.json();
+      if(!rr.ok||!data.ok)throw new Error(data.error||('Reader returned '+rr.status));
+      item.title=(data.title||item.url).trim().slice(0,180);item.text=String(data.text||'').slice(0,120000);item.status='read via server · '+item.text.length+' chars';item.readAt=now();
+      saveReading(r);journal('bench-read-server','#'+item.id+' '+item.text.length+' chars');
+      say('wrk','Read source #'+item.id+' through my server reader.\nTitle: '+item.title+'\nCaptured: '+item.text.length+' characters.\n\nThe page text is stored locally with its source. I do not have a semantic summarizer yet.');
+    }catch(serverError){
+      item.status='blocked · '+serverError.message;saveReading(r);journal('bench-blocked','#'+item.id+' browser: '+browserError.message+' server: '+serverError.message);
+      say('wrk','I saved source #'+item.id+', but both reading paths failed.\nBrowser: '+browserError.message+'\nServer reader: '+serverError.message+'\n\nI will not claim I read blocked content.');
+    }
   }
 }
 function benchMove(id,pos){
