@@ -1,6 +1,6 @@
 {
   "name": "WRKMAN",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "born": "2026-10-01",
   "model": null,
   "brainProtocol": "wrkman.brain.v1",
@@ -35,7 +35,8 @@
     "Fall back to a server-side public webpage reader when browser CORS blocks a Reading Bench source.",
     "Deterministically scan captured Reading Bench text into source-partitioned potential vocabulary with occurrence counts.",
     "Reject potential words per source without treating rejection as knowledge.",
-    "Admit user-approved words into a separate active vocabulary while preserving source provenance."
+    "Admit user-approved words into a separate active vocabulary while preserving source provenance.",
+    "Review source-partitioned potential vocabulary in a mobile swipe-card admission gate with explicit YES/NO decisions."
   ],
   "limitations": [
     "No general language model is connected.",
