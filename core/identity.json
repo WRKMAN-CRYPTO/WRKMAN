@@ -1,6 +1,6 @@
 {
   "name": "WRKMAN",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "born": "2026-10-01",
   "model": null,
   "brainProtocol": "wrkman.brain.v1",
@@ -39,7 +39,8 @@
     "Admit user-approved words into a separate active vocabulary while preserving source provenance.",
     "Review source-partitioned potential vocabulary in a mobile swipe-card admission gate with explicit YES/NO decisions.",
     "Forge explicit typed relationships between admitted vocabulary words through a mobile Concept Forge.",
-    "Mount task-specific interface modules into a shared W workspace while preserving the command console underneath."
+    "Mount task-specific interface modules into a shared W workspace while preserving the command console underneath.",
+    "Export vocabulary, concepts, and Reading Bench metadata as a portable local learning snapshot without exporting memories or captured source text."
   ],
   "limitations": [
     "No general language model is connected.",
