@@ -35,7 +35,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.11</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.12</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -90,7 +90,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="forge-list" id="forge-list"></div>
 </div>
 
-<script src="brain.js?v=0.11.0"></script>
+<script src="brain.js?v=0.12.0"></script>
 <script>
 (function(){
 'use strict';
@@ -117,7 +117,7 @@ var forgeState={a:null,b:null};
 var W={stack:[],current:'talk'};
 var identity={
   name:'WRKMAN',
-  version:'0.11.0',
+  version:'0.12.0',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -143,7 +143,7 @@ function wMount(name,push){
   if(name==='talk'){wClose();return}
   if(name==='learn'){title.textContent='LEARN';html='<div class="wgrid">'+wButton('READING BENCH','Sources, order and captured text','bench-ui')+wButton('VOCABULARY','Admitted words and source counts','vocab-ui')+wButton('CONCEPT FORGE','Wire explicit relationships','forge')+wButton('CONNECTIONS','Inspect typed concept edges','connections-ui')+'</div>'}
   else if(name==='memory'){title.textContent='MEMORY';html='<div class="wgrid">'+wButton('MEMORIES','Local remembered statements','memories-ui')+wButton('CONCEPT BOOK','Lessons and typed edges','concepts-ui')+wButton('JOURNAL','Recent local events','journal-ui')+wButton('BRAIN','Adapter and protocol status','brain-ui')+'</div>'}
-  else if(name==='tools'){title.textContent='TOOLS';html='<div class="wgrid">'+wButton('STATUS','Core state at a glance','status-ui')+wButton('CAPABILITIES','What WRKMAN can actually do','capabilities-ui')+wButton('INSPECT SELF','Read live repository root','inspect')+wButton('CONSOLE HELP','Full command reference','help')+'</div>'}
+  else if(name==='tools'){title.textContent='TOOLS';html='<div class="wgrid">'+wButton('STATUS','Core state at a glance','status-ui')+wButton('CAPABILITIES','What WRKMAN can actually do','capabilities-ui')+wButton('SNAPSHOT','Export local learning state','snapshot')+wButton('INSPECT SELF','Read live repository root','inspect')+wButton('CONSOLE HELP','Full command reference','help')+'</div>'}
   else if(name==='bench-ui'){title.textContent='READING BENCH';var r=loadReading();html=r.length?r.map(function(x){return '<div class="witem"><b>#'+x.id+' '+wEsc(x.title||x.url)+'</b><small>'+wEsc(x.status)+' · '+wEsc(x.url)+'</small>'+(x.text?'<button class="waction" data-wcmd="words '+x.id+'">REVIEW WORDS</button>':'')+'</div>'}).join(''):'<div class="wempty">Reading Bench is empty.</div>'}
   else if(name==='vocab-ui'){title.textContent='ACTIVE VOCABULARY';var v=loadVocab().slice().sort(function(a,b){return a.word.localeCompare(b.word)});html=v.length?v.map(function(x){return '<div class="witem"><b>'+wEsc(x.word)+'</b><small>seen '+x.occurrences+'× · '+x.sources.map(function(n){return '#'+n}).join(', ')+'</small></div>'}).join(''):'<div class="wempty">No admitted words yet.</div>'}
   else if(name==='connections-ui'){title.textContent='CONNECTIONS';var e=conceptEdges();html=e.length?e.map(function(x){return '<div class="witem">'+wEsc(x)+'</div>'}).join(''):'<div class="wempty">No typed connections yet.</div>'}
@@ -160,7 +160,7 @@ function wBack(){if(W.stack.length)wMount(W.stack.pop(),false);else wClose()}
 function wRoute(cmd){
   if(cmd==='forge'){wClose();openForge();return}
   if(/^words\s+\d+$/.test(cmd)){wClose();openWordReview(cmd.match(/\d+/)[0]);return}
-  if(cmd==='inspect'||cmd==='help'){wClose();act(cmd);return}
+  if(cmd==='inspect'||cmd==='help'||cmd==='snapshot'){wClose();act(cmd);return}
   wMount(cmd);
 }
 function now(){return new Date().toISOString()}
@@ -516,6 +516,14 @@ function benchRemove(id){
   if(n.length===r.length){say('wrk','I do not have Reading Bench source #'+id+'.');return}
   saveReading(n);journal('bench-remove','#'+id);say('wrk','Removed source #'+id+' from my Reading Bench.');
 }
+function snapshot(){
+  var reading=loadReading().map(function(x){return {id:x.id,url:x.url,title:x.title,status:x.status,addedAt:x.addedAt,readAt:x.readAt,note:x.note,scannedAt:x.scannedAt||null}});
+  var data={format:'wrkman.snapshot.v1',exportedAt:now(),identity:{name:identity.name,version:identity.version},vocabulary:loadVocab(),concepts:loadConcepts(),readingBench:reading};
+  var text=JSON.stringify(data,null,2),blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='wrkman-snapshot-'+now().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);
+  journal('snapshot','Exported vocabulary '+data.vocabulary.length+', concepts '+data.concepts.length+', sources '+data.readingBench.length);
+  say('wrk','Snapshot exported.\nVocabulary: '+data.vocabulary.length+'\nConcepts: '+data.concepts.length+'\nReading Bench sources: '+data.readingBench.length+'\n\nMemories, journal entries, captured page text, and rejected candidates were deliberately excluded.');
+}
 function showJournal(){
   var j=loadJournal().slice(-30);
   if(!j.length){say('wrk','My journal is empty.');return}
@@ -537,6 +545,7 @@ function help(){
     'memories',
     'forget <memory number>',
     'journal',
+    'snapshot',
     'bench',
     'bench add <page url>',
     'bench seed 5',
@@ -571,6 +580,7 @@ async function act(raw){
   if(low==='inspect'||low==='inspect self'||low==='inspect repository'||low==='read yourself'||low==='read repository')return inspect();
   if(low==='memories'||low==='recall'||low==='what do you remember?'||low==='what do you remember')return memories();
   if(low==='journal')return showJournal();
+  if(low==='snapshot'||low==='export snapshot')return snapshot();
   if(low==='concepts'||low==='concept book')return concepts();
   if(low==='forge'||low==='concept forge')return openForge();
   if(low==='connections'||low==='concept connections')return showGraph();
