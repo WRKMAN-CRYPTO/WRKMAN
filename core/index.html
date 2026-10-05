@@ -23,6 +23,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 .word-review{position:fixed;inset:0;z-index:50;background:#050709d9;backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:22px}
 .word-review.open{display:flex}.word-card{width:min(420px,100%);min-height:430px;border:1px solid #3a4149;border-radius:24px;background:linear-gradient(180deg,#151a1f,#0b0e11);box-shadow:0 24px 80px #000b;display:flex;flex-direction:column;justify-content:space-between;padding:18px;touch-action:pan-y;user-select:none}
 .word-head{display:flex;justify-content:space-between;gap:12px;color:#9aa5af;font-size:10px;letter-spacing:.08em}.word-main{display:grid;place-items:center;text-align:center;min-height:220px}.word-main b{font:900 clamp(34px,10vw,62px)/1 system-ui,-apple-system,sans-serif;letter-spacing:.04em;text-transform:uppercase}.word-meta{margin-top:14px;color:#aeb7bf;font-size:12px}.word-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.word-actions button,.word-close{min-height:54px;border-radius:14px;border:1px solid var(--line);font:900 13px ui-monospace,monospace;letter-spacing:.08em}.word-no{background:#1a1111;color:#ff9b91;border-color:#6d3430!important}.word-yes{background:#102018;color:#9de4b6;border-color:#355846!important}.word-close{margin-top:10px;width:100%;min-height:42px;background:#11161b;color:#aeb7bf}.word-hint{text-align:center;margin:12px 0 0;color:#6f7982;font-size:10px}
+.forge{position:fixed;inset:0;z-index:60;background:#050709f2;display:none;flex-direction:column;padding:calc(14px + var(--safeT)) 14px calc(14px + var(--safeB));gap:10px}.forge.open{display:flex}.forge-top{display:flex;align-items:center;justify-content:space-between}.forge-top b{color:var(--amber);letter-spacing:.13em}.forge-top button{border:1px solid var(--line);background:#11161b;color:#ccd3d8;border-radius:10px;padding:9px 12px}.forge-search{min-height:46px!important}.forge-build{border:1px solid #343b43;border-radius:16px;padding:12px;background:#0d1115}.forge-slots{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}.forge-slot{min-height:58px;border:1px dashed #4a535c;border-radius:12px;display:grid;place-items:center;padding:8px;text-align:center;font-weight:900}.forge-slot.set{border-style:solid;border-color:#76572f;color:var(--amber)}.forge-rel{border:1px solid #355846;background:#102018;color:#9de4b6;border-radius:10px;min-height:44px;padding:0 8px;font:800 10px ui-monospace,monospace}.forge-save{width:100%;min-height:48px;margin-top:10px;border:1px solid #c6842d;background:var(--amber);color:#1b1207;border-radius:12px;font:900 12px ui-monospace,monospace}.forge-list{flex:1;overflow:auto;border:1px solid var(--line);border-radius:16px;background:#0b0e11;padding:8px}.forge-word{width:100%;display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;border:0;border-bottom:1px solid #1c2228;background:transparent;color:#e9edf0;padding:13px 10px;font:800 12px ui-monospace,monospace}.forge-word small{color:#75808a;font-weight:400}.forge-note{font-size:9px;color:#707b84;line-height:1.45}
 @media(max-width:430px){.quick{grid-template-columns:repeat(2,1fr)}.screen{min-height:360px}.title{font-size:19px}}
 </style>
 </head>
@@ -32,7 +33,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.9.1</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.10</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -72,8 +73,18 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
     </div>
   </div>
 </div>
+<div class="forge" id="concept-forge" aria-hidden="true">
+  <div class="forge-top"><b>CONCEPT FORGE</b><button id="forge-close">CLOSE</button></div>
+  <div class="forge-build">
+    <div class="forge-slots"><div class="forge-slot" id="forge-a">CHOOSE WORD</div><select class="forge-rel" id="forge-rel"><option>IS A</option><option>PART OF</option><option>CONNECTS</option><option>USES</option><option>ACTS ON</option><option>RELATED TO</option><option>SAME AS</option></select><div class="forge-slot" id="forge-b">CHOOSE WORD</div></div>
+    <button class="forge-save" id="forge-save">FORGE CONNECTION</button>
+  </div>
+  <input class="forge-search" id="forge-search" placeholder="Filter active vocabulary…" autocomplete="off">
+  <div class="forge-note">Tap two admitted words. WRKMAN records only the relationship you explicitly choose. No inferred edges.</div>
+  <div class="forge-list" id="forge-list"></div>
+</div>
 
-<script src="brain.js?v=0.9.1"></script>
+<script src="brain.js?v=0.10.0"></script>
 <script>
 (function(){
 'use strict';
@@ -95,9 +106,10 @@ brainBus.use('first-words');
 var log=document.getElementById('log');
 var input=document.getElementById('in');
 var wordReview={sourceId:null,index:0,startX:null};
+var forgeState={a:null,b:null};
 var identity={
   name:'WRKMAN',
-  version:'0.9.1',
+  version:'0.10.0',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -378,6 +390,27 @@ function vocabulary(){
   if(!v.length){say('wrk','My active vocabulary is empty. Potential words remain partitioned by source until you admit them.');return}
   say('wrk','ACTIVE VOCABULARY\n'+v.map(function(x){return x.word+' · seen '+x.occurrences+'× · source'+(x.sources.length===1?' ':'s ')+x.sources.map(function(n){return '#'+n}).join(', ')}).join('\n'));
 }
+function conceptEdges(){
+  return loadConcepts().filter(function(x){return x.type==='edge'}).map(function(x){return '#'+x.id+'  '+x.terms[0]+' --'+x.relation+'--> '+x.terms[1]});
+}
+function renderForge(){
+  var q=document.getElementById('forge-search').value.toLowerCase().trim(),v=loadVocab().slice().sort(function(a,b){return a.word.localeCompare(b.word)});
+  document.getElementById('forge-a').textContent=forgeState.a||'CHOOSE WORD';document.getElementById('forge-b').textContent=forgeState.b||'CHOOSE WORD';
+  document.getElementById('forge-a').classList.toggle('set',!!forgeState.a);document.getElementById('forge-b').classList.toggle('set',!!forgeState.b);
+  var box=document.getElementById('forge-list');box.innerHTML='';
+  v.filter(function(x){return !q||x.word.indexOf(q)!==-1}).forEach(function(x){
+    var b=document.createElement('button');b.className='forge-word';b.innerHTML='<span>'+esc(x.word)+'</span><small>'+x.occurrences+'× · '+x.sources.map(function(n){return '#'+n}).join(', ')+'</small>';
+    b.addEventListener('click',function(){if(!forgeState.a||forgeState.b){forgeState.a=x.word;forgeState.b=null}else if(x.word!==forgeState.a)forgeState.b=x.word;renderForge()});box.appendChild(b);
+  });
+}
+function openForge(){if(!loadVocab().length){say('wrk','My active vocabulary is empty. Admit words before forging concepts.');return}forgeState={a:null,b:null};document.getElementById('forge-search').value='';document.getElementById('concept-forge').classList.add('open');document.getElementById('concept-forge').setAttribute('aria-hidden','false');renderForge()}
+function forgeConnection(){
+  if(!forgeState.a||!forgeState.b){say('wrk','Concept Forge needs two different admitted words.');return}
+  var rel=document.getElementById('forge-rel').value,c=loadConcepts(),id=c.reduce(function(n,x){return Math.max(n,x.id||0)},0)+1;
+  c.push({id:id,type:'edge',terms:[forgeState.a,forgeState.b],relation:rel,at:now()});saveConcepts(c);journal('concept-edge','#'+id+' '+forgeState.a+' '+rel+' '+forgeState.b);
+  say('wrk','Forged concept #'+id+': '+forgeState.a+' --'+rel+'--> '+forgeState.b+'.');forgeState={a:null,b:null};renderForge();
+}
+function showGraph(){var e=conceptEdges();if(!e.length){say('wrk','I have no typed concept connections yet. Use: forge');return}say('wrk','CONCEPT CONNECTIONS\n'+e.join('\n'))}
 function readingBench(){
   var r=loadReading();
   if(!r.length){say('wrk','My Reading Bench is empty. Use: bench add <url>');return}
@@ -450,6 +483,8 @@ function help(){
     'remember <text>',
     'teach <term> means <term>',
     'concepts',
+    'forge',
+    'connections',
     'unteach <term or concept number>',
     'memories',
     'forget <memory number>',
@@ -484,6 +519,8 @@ async function act(raw){
   if(low==='memories'||low==='recall'||low==='what do you remember?'||low==='what do you remember')return memories();
   if(low==='journal')return showJournal();
   if(low==='concepts'||low==='concept book')return concepts();
+  if(low==='forge'||low==='concept forge')return openForge();
+  if(low==='connections'||low==='concept connections')return showGraph();
   if(low==='brain'||low==='brain status')return brainStatus();
   if(low==='vocabulary'||low==='vocab')return vocabulary();
   if(/^scan\s+#?\d+\s*$/i.test(q))return scanWords(q.match(/\d+/)[0]);
@@ -510,6 +547,11 @@ Array.prototype.forEach.call(document.querySelectorAll('[data-cmd]'),function(b)
 document.getElementById('word-yes').addEventListener('click',function(){reviewDecision(true)});
 document.getElementById('word-no').addEventListener('click',function(){reviewDecision(false)});
 document.getElementById('word-close').addEventListener('click',function(){document.getElementById('word-review').classList.remove('open');document.getElementById('word-review').setAttribute('aria-hidden','true')});
+document.getElementById('forge-close').addEventListener('click',function(){document.getElementById('concept-forge').classList.remove('open');document.getElementById('concept-forge').setAttribute('aria-hidden','true')});
+document.getElementById('forge-search').addEventListener('input',renderForge);
+document.getElementById('forge-save').addEventListener('click',forgeConnection);
+document.getElementById('forge-a').addEventListener('click',function(){forgeState.a=null;renderForge()});
+document.getElementById('forge-b').addEventListener('click',function(){forgeState.b=null;renderForge()});
 document.getElementById('word-card').addEventListener('touchstart',function(e){wordReview.startX=e.touches&&e.touches[0]?e.touches[0].clientX:null},{passive:true});
 document.getElementById('word-card').addEventListener('touchend',function(e){if(wordReview.startX===null)return;var x=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientX:wordReview.startX,dx=x-wordReview.startX;wordReview.startX=null;if(Math.abs(dx)>55)reviewStep(dx<0?1:-1)},{passive:true});
 
