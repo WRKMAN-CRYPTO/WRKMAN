@@ -106,6 +106,7 @@ var CONCEPTKEY='wrkman.core.concepts.v1';
 var READKEY='wrkman.core.reading.v1';
 var VOCABKEY='wrkman.core.vocabulary.v1';
 var MAXJ=200;
+var SEED_SOURCE5='https://wrkman-crypto.github.io/WRKMAN/core/source-5-work-vocabulary.txt';
 var observations=[];
 var brainBus=new WRKMANBrain.BrainBus().register(WRKMANBrain.none).register(WRKMANBrain.firstWords);
 brainBus.use('first-words');
@@ -454,6 +455,15 @@ function readingBench(){
   if(!r.length){say('wrk','My Reading Bench is empty. Use: bench add <url>');return}
   say('wrk',r.map(function(x,i){return (i+1)+'. #'+x.id+'  '+(x.title||x.url)+'\n    '+x.status+' · '+x.url+(x.note?'\n    note: '+x.note:'')}).join('\n\n'));
 }
+async function seedSource5(){
+  var r=loadReading();
+  if(r.find(function(x){return x.id===5})){say('wrk','Reading Bench source #5 already exists. I left it unchanged.');return}
+  if(r.some(function(x){return x.id>5})){say('wrk','I cannot safely claim source #5 because a later source number already exists. Add this seed manually instead:\n'+SEED_SOURCE5);return}
+  var item={id:5,url:SEED_SOURCE5,title:'WRKMAN Work Vocabulary Seed',status:'saved · unread',text:'',addedAt:now(),readAt:null,note:'Curated candidate vocabulary. Admission remains manual.'};
+  r.push(item);saveReading(r);journal('bench-seed','#5 '+SEED_SOURCE5);
+  say('wrk','Added curated work-vocabulary seed as Reading Bench source #5.\nTrying to read it now…');
+  await benchRead(5);
+}
 async function benchAdd(raw){
   raw=raw.trim();var url;
   try{url=new URL(raw);if(url.protocol!=='http:'&&url.protocol!=='https:')throw new Error('protocol')}catch(e){say('wrk','Give me a full HTTP or HTTPS page link.');return}
@@ -529,6 +539,7 @@ function help(){
     'journal',
     'bench',
     'bench add <page url>',
+    'bench seed 5',
     'bench read <source number>',
     'bench move <source number> <position>',
     'bench note <source number> <your note>',
@@ -571,6 +582,7 @@ async function act(raw){
   if(/^reject\s+#?\d+\s+[^\s]+\s*$/i.test(q)){var rp=q.match(/^reject\s+#?(\d+)\s+([^\s]+)\s*$/i);return rejectWord(rp[1],rp[2])}
   if(/^admit\s+#?\d+\s+[^\s]+\s*$/i.test(q)){var ap=q.match(/^admit\s+#?(\d+)\s+([^\s]+)\s*$/i);return admitWord(ap[1],ap[2])}
   if(low==='bench'||low==='reading bench'||low==='reading')return readingBench();
+  if(low==='bench seed 5'||low==='seed 5')return seedSource5();
   if(/^bench\s+add\s+/i.test(q))return benchAdd(q.replace(/^bench\s+add\s+/i,''));
   if(/^bench\s+read\s+#?\d+\s*$/i.test(q))return benchRead(q.match(/\d+/)[0]);
   if(/^bench\s+move\s+#?\d+\s+\d+\s*$/i.test(q)){var nums=q.match(/\d+/g);return benchMove(nums[0],nums[1])}
