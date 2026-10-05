@@ -20,6 +20,9 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 .quick{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.quick button,.send{border:1px solid var(--line);background:#11161b;color:#d9dfe4;border-radius:11px;min-height:42px;font:800 10px/1 ui-monospace,monospace;letter-spacing:.06em}.quick button:active,.send:active{transform:scale(.98);background:#171d23}
 .composer{display:grid;grid-template-columns:1fr auto;gap:8px}input{width:100%;min-height:48px;border:1px solid #343b43;border-radius:13px;background:#0d1115;color:#fff;padding:0 13px;font:13px ui-monospace,monospace;outline:none}input:focus{border-color:#8d6937;box-shadow:0 0 0 3px #ffb3470e}.send{padding:0 16px;color:#1b1207;background:var(--amber);border-color:#c6842d}
 .foot{font-size:9px;color:#69737c;line-height:1.45;text-align:center;padding:0 8px}
+.word-review{position:fixed;inset:0;z-index:50;background:#050709d9;backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:22px}
+.word-review.open{display:flex}.word-card{width:min(420px,100%);min-height:430px;border:1px solid #3a4149;border-radius:24px;background:linear-gradient(180deg,#151a1f,#0b0e11);box-shadow:0 24px 80px #000b;display:flex;flex-direction:column;justify-content:space-between;padding:18px;touch-action:pan-y;user-select:none}
+.word-head{display:flex;justify-content:space-between;gap:12px;color:#9aa5af;font-size:10px;letter-spacing:.08em}.word-main{display:grid;place-items:center;text-align:center;min-height:220px}.word-main b{font:900 clamp(34px,10vw,62px)/1 system-ui,-apple-system,sans-serif;letter-spacing:.04em;text-transform:uppercase}.word-meta{margin-top:14px;color:#aeb7bf;font-size:12px}.word-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.word-actions button,.word-close{min-height:54px;border-radius:14px;border:1px solid var(--line);font:900 13px ui-monospace,monospace;letter-spacing:.08em}.word-no{background:#1a1111;color:#ff9b91;border-color:#6d3430!important}.word-yes{background:#102018;color:#9de4b6;border-color:#355846!important}.word-close{margin-top:10px;width:100%;min-height:42px;background:#11161b;color:#aeb7bf}.word-hint{text-align:center;margin:12px 0 0;color:#6f7982;font-size:10px}
 @media(max-width:430px){.quick{grid-template-columns:repeat(2,1fr)}.screen{min-height:360px}.title{font-size:19px}}
 </style>
 </head>
@@ -29,7 +32,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.9</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.9.1</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -58,8 +61,19 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
 
 <div class="foot">Memory lives only in this browser for now. Repository access is public and read-only. Unknown stays unknown.</div>
 </main>
+<div class="word-review" id="word-review" aria-hidden="true">
+  <div class="word-card" id="word-card">
+    <div class="word-head"><span id="word-source">SOURCE</span><span id="word-count">0 / 0</span></div>
+    <div class="word-main"><div><b id="word-term">WORD</b><div class="word-meta" id="word-meta"></div></div></div>
+    <div>
+      <div class="word-actions"><button class="word-no" id="word-no">NO</button><button class="word-yes" id="word-yes">YES</button></div>
+      <div class="word-hint">Swipe left/right to browse · YES admits · NO rejects</div>
+      <button class="word-close" id="word-close">CLOSE</button>
+    </div>
+  </div>
+</div>
 
-<script src="brain.js?v=0.9.0"></script>
+<script src="brain.js?v=0.9.1"></script>
 <script>
 (function(){
 'use strict';
@@ -80,9 +94,10 @@ var brainBus=new WRKMANBrain.BrainBus().register(WRKMANBrain.none).register(WRKM
 brainBus.use('first-words');
 var log=document.getElementById('log');
 var input=document.getElementById('in');
+var wordReview={sourceId:null,index:0,startX:null};
 var identity={
   name:'WRKMAN',
-  version:'0.9.0',
+  version:'0.9.1',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -297,13 +312,45 @@ function scanWords(id){
   item.scannedAt=now();saveReading(r);journal('vocab-scan','#'+id+' '+item.candidates.length+' candidates');
   say('wrk','Scanned source #'+id+'.\nPotential vocabulary: '+item.candidates.length+' unique words.\n\nI counted strings only. I did not infer what any word means.\nUse: words '+id);
 }
-function showWords(id){
+function showWordsList(id){
   var r=loadReading(),item=r.find(function(x){return x.id===Number(id)});
   if(!item){say('wrk','I do not have Reading Bench source #'+id+'.');return}
   ensureCandidates(item);
   if(!item.candidates.length){say('wrk','Source #'+id+' has no potential vocabulary list yet. Use: scan '+id);return}
   var shown=item.candidates.slice(0,120);
   say('wrk','POTENTIAL VOCABULARY · SOURCE #'+id+'\n'+shown.map(function(x){return x.word+'  ×'+x.count}).join('\n')+(item.candidates.length>shown.length?'\n\n['+(item.candidates.length-shown.length)+' more candidates not shown]':''));
+}
+function currentReviewItem(){
+  var r=loadReading(),item=r.find(function(x){return x.id===Number(wordReview.sourceId)});
+  if(!item)return null;ensureCandidates(item);return item;
+}
+function renderWordReview(){
+  var item=currentReviewItem(),overlay=document.getElementById('word-review');
+  if(!item||!item.candidates.length){overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');say('wrk','No potential words remain in source #'+wordReview.sourceId+'.');return}
+  if(wordReview.index<0)wordReview.index=item.candidates.length-1;
+  if(wordReview.index>=item.candidates.length)wordReview.index=0;
+  var c=item.candidates[wordReview.index];
+  document.getElementById('word-source').textContent='SOURCE #'+item.id;
+  document.getElementById('word-count').textContent=(wordReview.index+1)+' / '+item.candidates.length;
+  document.getElementById('word-term').textContent=c.word;
+  document.getElementById('word-meta').textContent='seen '+c.count+'× in this source';
+  overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');
+}
+function openWordReview(id){
+  var r=loadReading(),item=r.find(function(x){return x.id===Number(id)});
+  if(!item){say('wrk','I do not have Reading Bench source #'+id+'.');return}
+  ensureCandidates(item);
+  if(!item.candidates.length){say('wrk','Source #'+id+' has no potential vocabulary list yet. Use: scan '+id);return}
+  wordReview.sourceId=Number(id);wordReview.index=0;renderWordReview();
+}
+function reviewStep(dir){wordReview.index+=dir;renderWordReview()}
+function reviewDecision(yes){
+  var item=currentReviewItem();if(!item||!item.candidates.length)return;
+  var word=item.candidates[wordReview.index].word,id=item.id;
+  if(yes)admitWord(id,word);else rejectWord(id,word);
+  var fresh=currentReviewItem();
+  if(fresh&&wordReview.index>=fresh.candidates.length)wordReview.index=Math.max(0,fresh.candidates.length-1);
+  renderWordReview();
 }
 function rejectWord(id,word){
   word=String(word||'').toLowerCase().trim();var r=loadReading(),item=r.find(function(x){return x.id===Number(id)});
@@ -415,6 +462,7 @@ function help(){
     'bench remove <source number>',
     'scan <source number>',
     'words <source number>',
+    'words list <source number>',
     'reject <source number> <word>',
     'admit <source number> <word>',
     'vocabulary',
@@ -439,7 +487,8 @@ async function act(raw){
   if(low==='brain'||low==='brain status')return brainStatus();
   if(low==='vocabulary'||low==='vocab')return vocabulary();
   if(/^scan\s+#?\d+\s*$/i.test(q))return scanWords(q.match(/\d+/)[0]);
-  if(/^words\s+#?\d+\s*$/i.test(q))return showWords(q.match(/\d+/)[0]);
+  if(/^words\s+list\s+#?\d+\s*$/i.test(q))return showWordsList(q.match(/\d+/)[0]);
+  if(/^words\s+#?\d+\s*$/i.test(q))return openWordReview(q.match(/\d+/)[0]);
   if(/^reject\s+#?\d+\s+[^\s]+\s*$/i.test(q)){var rp=q.match(/^reject\s+#?(\d+)\s+([^\s]+)\s*$/i);return rejectWord(rp[1],rp[2])}
   if(/^admit\s+#?\d+\s+[^\s]+\s*$/i.test(q)){var ap=q.match(/^admit\s+#?(\d+)\s+([^\s]+)\s*$/i);return admitWord(ap[1],ap[2])}
   if(low==='bench'||low==='reading bench'||low==='reading')return readingBench();
@@ -458,6 +507,11 @@ async function act(raw){
 
 document.getElementById('form').addEventListener('submit',function(e){e.preventDefault();var q=input.value;input.value='';act(q)});
 Array.prototype.forEach.call(document.querySelectorAll('[data-cmd]'),function(b){b.addEventListener('click',function(){act(b.getAttribute('data-cmd'))})});
+document.getElementById('word-yes').addEventListener('click',function(){reviewDecision(true)});
+document.getElementById('word-no').addEventListener('click',function(){reviewDecision(false)});
+document.getElementById('word-close').addEventListener('click',function(){document.getElementById('word-review').classList.remove('open');document.getElementById('word-review').setAttribute('aria-hidden','true')});
+document.getElementById('word-card').addEventListener('touchstart',function(e){wordReview.startX=e.touches&&e.touches[0]?e.touches[0].clientX:null},{passive:true});
+document.getElementById('word-card').addEventListener('touchend',function(e){if(wordReview.startX===null)return;var x=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientX:wordReview.startX,dx=x-wordReview.startX;wordReview.startX=null;if(Math.abs(dx)>55)reviewStep(dx<0?1:-1)},{passive:true});
 
 (async function boot(){
   journal('boot','WRKMAN Core page loaded.');
