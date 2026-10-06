@@ -1,6 +1,6 @@
 {
   "name": "WRKMAN",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "born": "2026-10-01",
   "model": null,
   "brainProtocol": "wrkman.brain.v1",
@@ -43,7 +43,8 @@
     "Export vocabulary, concepts, and Reading Bench metadata as a portable local learning snapshot without exporting memories or captured source text.",
     "Pin an admitted vocabulary word as a Concept Forge hub and rapidly forge explicit typed spokes without inferring connections.",
     "Browse Concept Forge wiring targets through a radial A-Z vocabulary navigator around a pinned hub, with paged word rings.",
-    "Detect a stale cached shell when its version differs from identity and reload through a versioned URL."
+    "Detect a stale cached shell when its version differs from identity and reload through a versioned URL.",
+    "Use interactive radial alphabet and word rings without transparent layers intercepting touch input."
   ],
   "limitations": [
     "No general language model is connected.",
