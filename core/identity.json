@@ -1,6 +1,6 @@
 {
   "name": "WRKMAN",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "born": "2026-10-01",
   "model": null,
   "brainProtocol": "wrkman.brain.v1",
@@ -41,7 +41,8 @@
     "Forge explicit typed relationships between admitted vocabulary words through a mobile Concept Forge.",
     "Mount task-specific interface modules into a shared W workspace while preserving the command console underneath.",
     "Export vocabulary, concepts, and Reading Bench metadata as a portable local learning snapshot without exporting memories or captured source text.",
-    "Pin an admitted vocabulary word as a Concept Forge hub and rapidly forge explicit typed spokes without inferring connections."
+    "Pin an admitted vocabulary word as a Concept Forge hub and rapidly forge explicit typed spokes without inferring connections.",
+    "Browse Concept Forge wiring targets through a radial A-Z vocabulary navigator around a pinned hub, with paged word rings."
   ],
   "limitations": [
     "No general language model is connected.",
