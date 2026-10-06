@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090b0d">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>WRKMAN Core</title>
 <style>
 :root{color-scheme:dark;--bg:#090b0d;--panel:#101419;--line:#2b3138;--ink:#f4f1e8;--muted:#8f9aa4;--amber:#ffb347;--green:#80d6a3;--red:#ff8073;--safeT:env(safe-area-inset-top,0px);--safeB:env(safe-area-inset-bottom,0px)}
@@ -35,7 +38,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.14</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.14.1</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -93,11 +96,12 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="forge-list" id="forge-list"></div>
 </div>
 
-<script src="brain.js?v=0.14.0"></script>
+<script src="brain.js?v=0.14.1"></script>
 <script>
 (function(){
 'use strict';
 
+var SHELL_VERSION='0.14.1';
 var OWNER='WRKMAN-CRYPTO';
 var REPO='WRKMAN';
 var BRANCH='main';
@@ -120,7 +124,7 @@ var forgeState={a:null,b:null,mode:'pair',hub:null,letter:null,page:0,target:nul
 var W={stack:[],current:'talk'};
 var identity={
   name:'WRKMAN',
-  version:'0.14.0',
+  version:'0.14.1',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -668,6 +672,16 @@ document.getElementById('word-card').addEventListener('touchend',function(e){if(
   journal('boot','WRKMAN Core page loaded.');
   say('sys','Power applied.');
   await loadIdentity();
+  if(identity.version!==SHELL_VERSION){
+    var fresh=new URL(location.href);
+    if(fresh.searchParams.get('v')!==identity.version){
+      say('sys','Shell '+SHELL_VERSION+' and identity '+identity.version+' do not match. Reloading a fresh shell…');
+      fresh.searchParams.set('v',identity.version);
+      location.replace(fresh.toString());
+      return;
+    }
+    say('bad','Version mismatch persists: shell '+SHELL_VERSION+' · identity '+identity.version+'.');
+  }
   document.getElementById('brain-pill').textContent='BRAIN: '+brainBus.current().id.toUpperCase();
   say('wrk','WRKMAN Core '+identity.version+' online.\nBrain protocol: '+WRKMANBrain.protocol+'\nActive brain: '+brainBus.current().id.toUpperCase()+'\nMemory: local to this browser.\nRepository hands: READ ONLY.\n\nMy brain is now a replaceable component. Type "brain" to inspect it.');
 })();
