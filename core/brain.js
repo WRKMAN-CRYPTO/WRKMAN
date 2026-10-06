@@ -147,6 +147,36 @@ function bestMemory(message,memories,concepts){
   });
   return best;
 }
+function cleanTerm(s){
+  return String(s||'').toLowerCase().replace(/^[\s]+|[\s]+$/g,'').replace(/^(a|an|the)\s+/,'');
+}
+function directEdgesFor(term,concepts){
+  term=cleanTerm(term);
+  var out=[],incoming=[];
+  (concepts||[]).forEach(function(c){
+    if(c.type!=='edge'||!c.terms||c.terms.length<2)return;
+    var a=cleanTerm(c.terms[0]),z=cleanTerm(c.terms[1]),rel=String(c.relation||'').toUpperCase();
+    if(a===term)out.push({from:c.terms[0],relation:rel,to:c.terms[1],id:c.id});
+    if(z===term)incoming.push({from:c.terms[0],relation:rel,to:c.terms[1],id:c.id});
+  });
+  return {out:out,incoming:incoming};
+}
+function graphAnswerForWhatIs(q,concepts){
+  var m=q.match(/^(?:what is|what's)\s+(.+)$/);
+  if(!m)return null;
+  var subject=cleanTerm(m[1]);
+  if(!subject)return null;
+  var edges=directEdgesFor(subject,concepts),chosen=edges.out.length?edges.out:edges.incoming;
+  if(!chosen.length)return null;
+  var limit=12,shown=chosen.slice(0,limit),lines=shown.map(function(e){return e.from+' --'+e.relation+'--> '+e.to});
+  var extra=chosen.length-shown.length;
+  var lead=edges.out.length?'I know these direct connections:':'I know these direct connections to '+subject+':';
+  return {
+    text:lead+'\n'+lines.join('\n')+(extra?'\n+'+extra+' more direct connection'+(extra===1?'':'s')+'.':''),
+    confidence:'concept-grounded',
+    meta:{kind:'direct-concept',subject:subject,direction:edges.out.length?'outgoing':'incoming',edgeIds:shown.map(function(e){return e.id})}
+  };
+}
 var firstWords={
   id:'first-words',
   label:'First Words',
@@ -160,6 +190,8 @@ var firstWords={
     if(/^(who are you|what are you|tell me about yourself)$/.test(q)){
       return {text:'I am WRKMAN. My brain is a replaceable component. My identity, memory, tools, journal, and truth rules belong to WRKMAN.',confidence:'certain',meta:{kind:'identity'}};
     }
+    var graphHit=graphAnswerForWhatIs(q,packet.concepts);
+    if(graphHit)return graphHit;
     if(/\b(remember|know)\b/.test(q) || /^(what|who|where|when)\b/.test(q)){
       var hit=bestMemory(raw,packet.memories,packet.concepts);
       if(hit){
