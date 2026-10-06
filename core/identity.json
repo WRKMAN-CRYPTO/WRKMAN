@@ -1,6 +1,6 @@
 {
   "name": "WRKMAN",
-  "version": "0.14.2",
+  "version": "0.15.0",
   "born": "2026-10-01",
   "model": null,
   "brainProtocol": "wrkman.brain.v1",
@@ -44,7 +44,8 @@
     "Pin an admitted vocabulary word as a Concept Forge hub and rapidly forge explicit typed spokes without inferring connections.",
     "Browse Concept Forge wiring targets through a radial A-Z vocabulary navigator around a pinned hub, with paged word rings.",
     "Detect a stale cached shell when its version differs from identity and reload through a versioned URL.",
-    "Use interactive radial alphabet and word rings without transparent layers intercepting touch input."
+    "Use interactive radial alphabet and word rings without transparent layers intercepting touch input.",
+    "Review, apply, provenance-mark, and undo explicit assistant-proposed wiring batches using only admitted vocabulary."
   ],
   "limitations": [
     "No general language model is connected.",
@@ -59,6 +60,7 @@
     "I have no general world knowledge.",
     "No semantic webpage summarizer is connected yet.",
     "Some sites may still reject automated server-side reading, require authentication, render content only after client-side JavaScript, or expose non-HTML documents.",
-    "Vocabulary admission records exposure and provenance only; it does not infer definitions, semantics, or relationships."
+    "Vocabulary admission records exposure and provenance only; it does not infer definitions, semantics, or relationships.",
+    "Assistant wiring proposals are external suggestions and do not become WRKMAN knowledge until the user applies the batch locally."
   ]
 }
