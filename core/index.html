@@ -38,7 +38,7 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="mark" aria-label="WRKMAN W">
     <svg viewBox="0 0 64 64" role="img"><path d="M8 14l9 36 15-22 15 22 9-36" fill="none" stroke="#ffb347" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
-  <div><div class="kicker">HEARTBEAT / 0.14.2</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
+  <div><div class="kicker">HEARTBEAT / 0.15</div><h1 class="title">WRKMAN CORE</h1><div class="sub">Small. Persistent. Read-only hands. No bluffing.</div></div>
 </header>
 
 <div class="status">
@@ -96,12 +96,12 @@ header{display:flex;align-items:center;gap:12px}.mark{width:50px;height:50px;bor
   <div class="forge-list" id="forge-list"></div>
 </div>
 
-<script src="brain.js?v=0.14.2"></script>
+<script src="brain.js?v=0.15.0"></script>
 <script>
 (function(){
 'use strict';
 
-var SHELL_VERSION='0.14.2';
+var SHELL_VERSION='0.15.0';
 var OWNER='WRKMAN-CRYPTO';
 var REPO='WRKMAN';
 var BRANCH='main';
@@ -121,10 +121,12 @@ var log=document.getElementById('log');
 var input=document.getElementById('in');
 var wordReview={sourceId:null,index:0,startX:null};
 var forgeState={a:null,b:null,mode:'pair',hub:null,letter:null,page:0,target:null};
+var ASSIST_BATCH1=[["coupling","IS A","fitting"],["adapter","IS A","fitting"],["union","IS A","fitting"],["fitting","IS A","component"],["pipe","IS A","component"],["valve","IS A","component"],["sprinkler","IS A","component"],["head","IS A","component"],["hanger","IS A","component"],["nozzle","IS A","component"],["pump","IS A","equipment"],["scaffold","IS A","equipment"],["wheelbarrow","IS A","equipment"],["metal","IS A","material"],["plastic","IS A","material"],["wood","IS A","material"],["lumber","IS A","material"],["concrete","IS A","material"],["mortar","IS A","material"],["cement","IS A","material"],["brick","IS A","material"],["stone","IS A","material"],["gravel","IS A","material"],["sand","IS A","material"],["steel","IS A","metal"],["iron","IS A","metal"],["copper","IS A","metal"],["aluminum","IS A","metal"],["pvc","IS A","plastic"],["cpvc","IS A","plastic"],["hdpe","IS A","plastic"],["hammer","IS A","tool"],["wrench","IS A","tool"],["pliers","IS A","tool"],["screwdriver","IS A","tool"],["drill","IS A","tool"],["saw","IS A","tool"],["level","IS A","tool"],["knife","IS A","tool"],["clamp","IS A","tool"],["vise","IS A","tool"],["shovel","IS A","tool"],["rake","IS A","tool"],["hoe","IS A","tool"],["flower","IS A","plant"],["tree","IS A","plant"],["shrub","IS A","plant"],["grass","IS A","plant"],["root","PART OF","plant"],["leaf","PART OF","plant"],["branch","PART OF","tree"],["wall","PART OF","building"],["floor","PART OF","building"],["ceiling","PART OF","building"],["roof","PART OF","building"],["door","PART OF","building"],["foundation","PART OF","building"],["room","PART OF","building"],["length","IS A","measurement"],["width","IS A","measurement"],["height","IS A","measurement"],["depth","IS A","measurement"],["diameter","IS A","measurement"],["radius","IS A","measurement"],["angle","IS A","measurement"],["distance","IS A","measurement"],["area","IS A","measurement"],["volume","IS A","measurement"],["weight","IS A","measurement"],["front","IS A","position"],["back","IS A","position"],["center","IS A","position"],["corner","IS A","position"],["end","IS A","position"],["inside","IS A","position"],["outside","IS A","position"]];
+
 var W={stack:[],current:'talk'};
 var identity={
   name:'WRKMAN',
-  version:'0.14.2',
+  version:'0.15.0',
   born:'2026-10-01',
   model:null,
   hardRules:['Unknown stays unknown.','Do not claim an action happened unless it happened.','Read before assuming.'],
@@ -148,11 +150,18 @@ function wMount(name,push){
   if(push!==false&&W.current!=='talk'&&W.current!==name)W.stack.push(W.current);
   W.current=name;var body=document.getElementById('wbody'),title=document.getElementById('wtitle'),html='';
   if(name==='talk'){wClose();return}
-  if(name==='learn'){title.textContent='LEARN';html='<div class="wgrid">'+wButton('READING BENCH','Sources, order and captured text','bench-ui')+wButton('VOCABULARY','Admitted words and source counts','vocab-ui')+wButton('CONCEPT FORGE','Wire explicit relationships','forge')+wButton('CONNECTIONS','Inspect typed concept edges','connections-ui')+'</div>'}
+  if(name==='learn'){title.textContent='LEARN';html='<div class="wgrid">'+wButton('READING BENCH','Sources, order and captured text','bench-ui')+wButton('VOCABULARY','Admitted words and source counts','vocab-ui')+wButton('CONCEPT FORGE','Wire explicit relationships','forge')+wButton('ASSIST WIRING','Review assistant-proposed hard edges','assist-wire-ui')+wButton('CONNECTIONS','Inspect typed concept edges','connections-ui')+'</div>'}
   else if(name==='memory'){title.textContent='MEMORY';html='<div class="wgrid">'+wButton('MEMORIES','Local remembered statements','memories-ui')+wButton('CONCEPT BOOK','Lessons and typed edges','concepts-ui')+wButton('JOURNAL','Recent local events','journal-ui')+wButton('BRAIN','Adapter and protocol status','brain-ui')+'</div>'}
   else if(name==='tools'){title.textContent='TOOLS';html='<div class="wgrid">'+wButton('STATUS','Core state at a glance','status-ui')+wButton('CAPABILITIES','What WRKMAN can actually do','capabilities-ui')+wButton('SNAPSHOT','Export local learning state','snapshot')+wButton('INSPECT SELF','Read live repository root','inspect')+wButton('CONSOLE HELP','Full command reference','help')+'</div>'}
   else if(name==='bench-ui'){title.textContent='READING BENCH';var r=loadReading();html=r.length?r.map(function(x){return '<div class="witem"><b>#'+x.id+' '+wEsc(x.title||x.url)+'</b><small>'+wEsc(x.status)+' · '+wEsc(x.url)+'</small>'+(x.text?'<button class="waction" data-wcmd="words '+x.id+'">REVIEW WORDS</button>':'')+'</div>'}).join(''):'<div class="wempty">Reading Bench is empty.</div>'}
   else if(name==='vocab-ui'){title.textContent='ACTIVE VOCABULARY';var v=loadVocab().slice().sort(function(a,b){return a.word.localeCompare(b.word)});html=v.length?v.map(function(x){return '<div class="witem"><b>'+wEsc(x.word)+'</b><small>seen '+x.occurrences+'× · '+x.sources.map(function(n){return '#'+n}).join(', ')+'</small></div>'}).join(''):'<div class="wempty">No admitted words yet.</div>'}
+  else if(name==='assist-wire-ui'){
+    title.textContent='ASSIST WIRING';
+    var aw=assistantBatchStatus(),button=aw.ready.length?'<button class="waction" data-wcmd="apply-assist-1">APPLY BATCH 1 · '+aw.ready.length+' NEW EDGES</button>':'';
+    var undo=aw.applied.length?'<button class="waction" data-wcmd="undo-assist-1">UNDO ASSISTANT BATCH 1 · '+aw.applied.length+'</button>':'';
+    html='<div class="witem"><b>ASSISTANT BATCH 1</b><small>'+ASSIST_BATCH1.length+' high-confidence proposals · '+aw.ready.length+' ready · '+aw.existing.length+' already present · '+aw.missing.length+' missing vocabulary</small>'+button+undo+'</div>'+
+      ASSIST_BATCH1.map(function(e){var key=e.join('|'),state=aw.missingKeys[key]?'MISSING':aw.existingKeys[key]?'EXISTS':'READY';return '<div class="witem"><b>'+wEsc(e[0])+'</b> '+wEsc(e[1])+' → '+wEsc(e[2])+'<small>'+state+'</small></div>'}).join('');
+  }
   else if(name==='connections-ui'){title.textContent='CONNECTIONS';var e=conceptEdges();html=e.length?e.map(function(x){return '<div class="witem">'+wEsc(x)+'</div>'}).join(''):'<div class="wempty">No typed connections yet.</div>'}
   else if(name==='memories-ui'){title.textContent='MEMORIES';var m=loadMem();html=m.length?m.map(function(x){return '<div class="witem"><b>#'+x.id+'</b> '+wEsc(x.text)+'<small>'+wEsc(x.at)+'</small></div>'}).join(''):'<div class="wempty">No stored memories.</div>'}
   else if(name==='concepts-ui'){title.textContent='CONCEPT BOOK';var c=loadConcepts();html=c.length?c.map(function(x){return '<div class="witem"><b>#'+x.id+'</b> '+wEsc(x.type==='edge'?x.terms[0]+' --'+x.relation+'--> '+x.terms[1]:x.terms.join(' = '))+'</div>'}).join(''):'<div class="wempty">Concept Book is empty.</div>'}
@@ -165,6 +174,8 @@ function wMount(name,push){
 function wClose(){W.stack=[];W.current='talk';document.getElementById('wspace').classList.remove('open');document.getElementById('wspace').setAttribute('aria-hidden','true')}
 function wBack(){if(W.stack.length)wMount(W.stack.pop(),false);else wClose()}
 function wRoute(cmd){
+  if(cmd==='apply-assist-1'){applyAssistantBatch1();return}
+  if(cmd==='undo-assist-1'){undoAssistantBatch1();return}
   if(cmd==='forge'){wClose();openForge();return}
   if(/^words\s+\d+$/.test(cmd)){wClose();openWordReview(cmd.match(/\d+/)[0]);return}
   if(cmd==='inspect'||cmd==='help'||cmd==='snapshot'){wClose();act(cmd);return}
@@ -439,6 +450,35 @@ function vocabulary(){
 function conceptEdges(){
   return loadConcepts().filter(function(x){return x.type==='edge'}).map(function(x){return '#'+x.id+'  '+x.terms[0]+' --'+x.relation+'--> '+x.terms[1]});
 }
+function edgeKey(a,rel,b){return String(a)+'|'+String(rel)+'|'+String(b)}
+function assistantBatchStatus(){
+  var vocab={},concepts=loadConcepts(),existingKeys={},missingKeys={},ready=[],existing=[],missing=[],applied=[];
+  loadVocab().forEach(function(x){vocab[x.word]=1});
+  concepts.forEach(function(c){
+    if(c.type==='edge'&&c.terms&&c.terms.length>1)existingKeys[edgeKey(c.terms[0],c.relation,c.terms[1])]=1;
+    if(c.origin==='assistant-batch-1')applied.push(c);
+  });
+  ASSIST_BATCH1.forEach(function(e){
+    var k=edgeKey(e[0],e[1],e[2]);
+    if(!vocab[e[0]]||!vocab[e[2]]){missing.push(e);missingKeys[k]=1}
+    else if(existingKeys[k])existing.push(e);
+    else ready.push(e);
+  });
+  return {ready:ready,existing:existing,missing:missing,applied:applied,existingKeys:existingKeys,missingKeys:missingKeys};
+}
+function applyAssistantBatch1(){
+  var state=assistantBatchStatus();
+  if(!state.ready.length){say('wrk','Assistant wiring batch 1 has no new eligible edges to add.');wMount('assist-wire-ui',false);return}
+  var c=loadConcepts(),next=c.reduce(function(n,x){return Math.max(n,x.id||0)},0),stamp=now();
+  state.ready.forEach(function(e){c.push({id:++next,type:'edge',terms:[e[0],e[2]],relation:e[1],at:stamp,origin:'assistant-batch-1',approval:'user'});});
+  saveConcepts(c);journal('assist-wire','batch 1 added '+state.ready.length+' edges; skipped '+state.existing.length+' existing and '+state.missing.length+' missing');
+  say('wrk','Assistant wiring batch 1 applied.\nAdded: '+state.ready.length+'\nAlready present: '+state.existing.length+'\nMissing vocabulary: '+state.missing.length+'\n\nEvery added edge is marked origin: assistant-batch-1 and approval: user.');
+  wMount('assist-wire-ui',false);
+}
+function undoAssistantBatch1(){
+  var c=loadConcepts(),before=c.length;c=c.filter(function(x){return x.origin!=='assistant-batch-1'});saveConcepts(c);
+  journal('assist-wire-undo','batch 1 removed '+(before-c.length)+' edges');say('wrk','Removed '+(before-c.length)+' edges created by assistant wiring batch 1. Manually forged edges were left alone.');wMount('assist-wire-ui',false);
+}
 function setForgeMode(mode){
   forgeState.mode=mode==='wire'?'wire':'pair';forgeState.a=null;forgeState.b=null;forgeState.target=null;forgeState.letter=null;forgeState.page=0;
   document.getElementById('forge-pair').classList.toggle('active',forgeState.mode==='pair');
@@ -479,8 +519,8 @@ function renderForge(){
   });
 }
 function openForge(){if(!loadVocab().length){say('wrk','My active vocabulary is empty. Admit words before forging concepts.');return}forgeState={a:null,b:null,mode:'pair',hub:null,letter:null,page:0,target:null};document.getElementById('forge-search').value='';document.getElementById('concept-forge').classList.add('open');document.getElementById('concept-forge').setAttribute('aria-hidden','false');setForgeMode('pair')}
-function storeEdge(a,rel,b){
-  var c=loadConcepts(),id=c.reduce(function(n,x){return Math.max(n,x.id||0)},0)+1;c.push({id:id,type:'edge',terms:[a,b],relation:rel,at:now()});saveConcepts(c);journal('concept-edge','#'+id+' '+a+' '+rel+' '+b);return id;
+function storeEdge(a,rel,b,meta){
+  var c=loadConcepts(),id=c.reduce(function(n,x){return Math.max(n,x.id||0)},0)+1,obj={id:id,type:'edge',terms:[a,b],relation:rel,at:now()};if(meta)Object.keys(meta).forEach(function(k){obj[k]=meta[k]});c.push(obj);saveConcepts(c);journal('concept-edge','#'+id+' '+a+' '+rel+' '+b);return id;
 }
 function forgeConnection(){
   if(!forgeState.a||!forgeState.b){say('wrk','Concept Forge needs two different admitted words.');return}
@@ -581,6 +621,8 @@ function help(){
     'concepts',
     'forge',
     'connections',
+    'assist wiring',
+    'wire batch 1',
     'unteach <term or concept number>',
     'memories',
     'forget <memory number>',
@@ -624,6 +666,8 @@ async function act(raw){
   if(low==='concepts'||low==='concept book')return concepts();
   if(low==='forge'||low==='concept forge')return openForge();
   if(low==='connections'||low==='concept connections')return showGraph();
+  if(low==='assist wiring'||low==='assistant wiring')return wMount('assist-wire-ui');
+  if(low==='wire batch 1')return applyAssistantBatch1();
   if(low==='brain'||low==='brain status')return brainStatus();
   if(low==='vocabulary'||low==='vocab')return vocabulary();
   if(/^scan\s+#?\d+\s*$/i.test(q))return scanWords(q.match(/\d+/)[0]);
