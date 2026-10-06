@@ -80,10 +80,15 @@ function meaningful(s){
   var stop={the:1,a:1,an:1,is:1,are:1,am:1,my:1,me:1,i:1,you:1,your:1,what:1,whats:1,"what's":1,who:1,do:1,does:1,did:1,have:1,has:1,remember:1,about:1,tell:1,know:1,of:1,to:1,for:1,and:1};
   return words(s).filter(function(w){return !stop[w] && w.length>1});
 }
+function equivalenceTerms(c){
+  if(!c)return [];
+  if(c.type==='edge' && String(c.relation||'').toUpperCase()!=='SAME AS')return [];
+  return (c.terms||[]).map(function(t){return String(t).toLowerCase().trim()}).filter(Boolean);
+}
 function conceptMap(concepts){
   var map={};
   (concepts||[]).forEach(function(c){
-    var terms=(c.terms||[]).map(function(t){return String(t).toLowerCase().trim()}).filter(Boolean);
+    var terms=equivalenceTerms(c);
     terms.forEach(function(t){map[t]=terms});
   });
   return map;
@@ -104,7 +109,7 @@ function taughtPhrases(message,concepts){
   var raw=' '+String(message||'').toLowerCase().replace(/[^a-z0-9\s']/g,' ').replace(/\s+/g,' ').trim()+' ';
   var found=[];
   (concepts||[]).forEach(function(c){
-    (c.terms||[]).forEach(function(term){
+    equivalenceTerms(c).forEach(function(term){
       term=String(term).toLowerCase().trim();
       if(term.indexOf(' ')!==-1 && raw.indexOf(' '+term+' ')!==-1 && found.indexOf(term)===-1)found.push(term);
     });
