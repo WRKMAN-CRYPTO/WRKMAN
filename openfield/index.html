@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0d0c" />
+  <meta name="description" content="OpenField — a people-owned social prototype where every person has their own AI." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>OpenField α</title>
+  <style>
+    :root{
+      --bg:#0b0d0c;--panel:#121614;--panel2:#171c19;--ink:#eef3ef;--muted:#93a097;
+      --line:#29312c;--green:#9ef0a9;--green2:#4fd26c;--amber:#f0c36b;--red:#ef7f7f;
+      --radius:18px;--shadow:0 12px 40px rgba(0,0,0,.28);
+    }
+    *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
+    body{min-height:100vh;padding-bottom:90px;background:
+      radial-gradient(circle at 10% -10%,rgba(79,210,108,.10),transparent 34%),
+      radial-gradient(circle at 110% 20%,rgba(240,195,107,.06),transparent 30%),var(--bg)}
+    button,input,textarea{font:inherit} button{cursor:pointer}
+    .app{max-width:760px;margin:0 auto;padding:0 14px}
+    .top{position:sticky;top:0;z-index:20;padding:env(safe-area-inset-top) 0 0;background:linear-gradient(var(--bg) 74%,transparent)}
+    .topbar{height:64px;display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:10px}.mark{width:34px;height:34px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;background:var(--panel);font-weight:950;letter-spacing:-2px;color:var(--green)}
+    .brandText b{display:block;letter-spacing:.04em}.brandText small{color:var(--muted)}
+    .iconBtn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:9px 11px}
+    .hero{border:1px solid var(--line);background:linear-gradient(155deg,rgba(158,240,169,.10),rgba(255,255,255,.015));border-radius:24px;padding:18px;margin:8px 0 14px;box-shadow:var(--shadow)}
+    .eyebrow{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--green);font-weight:800}.hero h1{font-size:30px;line-height:1.03;margin:8px 0 8px}.hero p{color:#b6c0b9;margin:0;line-height:1.45}.principles{display:flex;gap:7px;overflow:auto;padding:12px 0 2px;scrollbar-width:none}.pill{white-space:nowrap;border:1px solid var(--line);background:#0f1211;color:#b8c4bc;padding:7px 10px;border-radius:999px;font-size:12px}
+    .sectionTitle{display:flex;align-items:end;justify-content:space-between;margin:18px 2px 9px}.sectionTitle h2{font-size:16px;margin:0}.sectionTitle small{color:var(--muted)}
+    .controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.filter{border:1px solid var(--line);background:var(--panel);color:#b9c4bd;border-radius:14px;padding:10px 8px;font-size:12px}.filter.active{background:rgba(158,240,169,.12);border-color:rgba(158,240,169,.35);color:var(--green)}
+    .card{border:1px solid var(--line);background:rgba(18,22,20,.95);border-radius:var(--radius);padding:14px;margin:10px 0;box-shadow:0 7px 24px rgba(0,0,0,.15)}
+    .postHead{display:flex;gap:10px;align-items:center}.avatar{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#1c241f;border:1px solid #2d3a32;font-size:20px}.who{min-width:0}.who b{display:block}.who span{color:var(--muted);font-size:12px}.badge{margin-left:auto;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--green);border:1px solid rgba(158,240,169,.25);border-radius:999px;padding:5px 7px}
+    .postText{font-size:15px;line-height:1.5;margin:12px 0 10px}.meta{display:flex;gap:8px;flex-wrap:wrap}.tag{font-size:11px;color:#aab6ae;background:#0e1110;border:1px solid var(--line);border-radius:999px;padding:5px 8px}.actions{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:12px;padding-top:10px}.actions button{border:0;background:transparent;color:#9da9a1;padding:6px 7px;border-radius:8px}.actions button:hover{background:#1a201c;color:var(--ink)}
+    .aiPanel{display:none}.aiPanel.open{display:block}.aiBox{border:1px solid rgba(158,240,169,.25);background:linear-gradient(180deg,#111813,#0f1311);border-radius:20px;padding:14px}.aiBox h3{margin:0 0 4px}.aiBox p{margin:0 0 12px;color:var(--muted);font-size:13px}.aiRow{display:flex;gap:8px}.aiRow input{flex:1;border:1px solid var(--line);background:#090c0a;color:var(--ink);padding:12px;border-radius:12px;min-width:0}.primary{border:0;background:var(--green);color:#071008;font-weight:850;padding:11px 14px;border-radius:12px}.aiReply{margin-top:10px;padding:12px;border-radius:12px;background:#0b0f0c;color:#c7d2ca;font-size:13px;line-height:1.45;display:none}
+    .composer textarea{width:100%;min-height:96px;resize:vertical;border:1px solid var(--line);background:#0c100d;color:var(--ink);padding:12px;border-radius:14px;outline:none}.composer textarea:focus{border-color:#4d6f58}.assist{display:flex;gap:7px;overflow:auto;padding:9px 0}.assist button{white-space:nowrap;border:1px solid var(--line);background:#0e120f;color:#b7c1ba;padding:7px 9px;border-radius:10px;font-size:12px}.composerFoot{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:12px}.secondary{border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-weight:750;padding:10px 13px;border-radius:12px}
+    .gardenGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.garden{min-height:130px;position:relative;overflow:hidden}.garden .emoji{font-size:30px}.garden h3{margin:8px 0 3px;font-size:15px}.garden p{margin:0;color:var(--muted);font-size:12px;line-height:1.35}.garden::after{content:"";position:absolute;width:80px;height:80px;border-radius:50%;background:rgba(158,240,169,.06);right:-20px;bottom:-25px}
+    .dataBox{display:flex;gap:10px}.dataBox button{flex:1}.fine{font-size:11px;color:#77827b;line-height:1.45}
+    .nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(760px,100%);z-index:30;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:rgba(10,13,11,.92);backdrop-filter:blur(18px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.nav button{border:0;background:transparent;color:#7e8981;border-radius:12px;padding:8px 4px;font-size:11px}.nav button span{display:block;font-size:19px;margin-bottom:3px}.nav button.active{background:#151b17;color:var(--green)}
+    .view{display:none}.view.active{display:block}.empty{padding:28px;text-align:center;color:var(--muted)}
+    .toast{position:fixed;left:50%;bottom:92px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#ecf7ef;color:#0b100c;padding:10px 13px;border-radius:12px;font-size:12px;font-weight:750;transition:.2s;z-index:60}.toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(max-width:430px){.hero h1{font-size:27px}.gardenGrid{grid-template-columns:1fr}.controls{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="topbar">
+      <div class="brand"><div class="mark">W</div><div class="brandText"><b>OPENFIELD <span style="color:var(--green)">α</span></b><small>people + their AIs</small></div></div>
+      <button class="iconBtn" id="aiToggle" aria-label="Open your AI">✦ AI</button>
+    </div>
+  </div>
+
+  <div id="home" class="view active">
+    <section class="hero">
+      <div class="eyebrow">the network is not the product. you are not the product.</div>
+      <h1>A social field you cultivate.</h1>
+      <p>Your AI helps you find people, knowledge and projects worth your attention. No ad auction. No mystery feed. Export everything.</p>
+      <div class="principles"><span class="pill">portable identity</span><span class="pill">user-shaped feed</span><span class="pill">AI as your tool</span><span class="pill">knowledge grows</span><span class="pill">vanity counts hidden</span></div>
+    </section>
+
+    <section class="aiPanel" id="aiPanel">
+      <div class="aiBox">
+        <h3>Your AI</h3>
+        <p>Ask the network through your own filter, not a corporate recommendation engine.</p>
+        <div class="aiRow"><input id="aiInput" placeholder="Find builders experimenting with offline AI…"/><button class="primary" id="aiAsk">Ask</button></div>
+        <div id="aiReply" class="aiReply"></div>
+      </div>
+    </section>
+
+    <div class="sectionTitle"><h2>Shape your field</h2><small>tap what you want more of</small></div>
+    <div class="controls" id="filters">
+      <button class="filter active" data-filter="useful">Useful</button>
+      <button class="filter active" data-filter="builders">Builders</button>
+      <button class="filter" data-filter="local">Local</button>
+      <button class="filter" data-filter="plants">Plants</button>
+      <button class="filter" data-filter="play">Play</button>
+      <button class="filter" data-filter="contrarian">Different views</button>
+    </div>
+
+    <div class="sectionTitle"><h2>Your field</h2><small id="feedNote">ranked by your choices</small></div>
+    <div id="feed"></div>
+  </div>
+
+  <div id="compose" class="view">
+    <div class="sectionTitle"><h2>Plant something</h2><small>post • guide • question • project</small></div>
+    <div class="card composer">
+      <textarea id="draft" placeholder="What should exist in the world because you shared it?"></textarea>
+      <div class="assist">
+        <button data-mode="clear">Make clear</button><button data-mode="short">Shorten</button><button data-mode="kind">Keep the point, lose the heat</button><button data-mode="guide">Turn into a tiny guide</button>
+      </div>
+      <div class="composerFoot"><span id="draftMeta">0 chars • local draft</span><button class="primary" id="postBtn">Plant post</button></div>
+    </div>
+    <div class="card">
+      <b>Before it leaves your phone</b>
+      <p class="fine">The AI assist in this prototype runs locally as deterministic demo logic. A production version would let you choose your AI provider or run one on-device. Your draft should not need to become platform property just to get help writing it.</p>
+    </div>
+  </div>
+
+  <div id="gardens" class="view">
+    <div class="sectionTitle"><h2>Knowledge gardens</h2><small>posts can become durable things</small></div>
+    <div class="gardenGrid">
+      <div class="card garden"><div class="emoji">🌱</div><h3>Backyard food</h3><p>Soil notes, banana care, seed swaps, tiny-farm experiments.</p></div>
+      <div class="card garden"><div class="emoji">🛠️</div><h3>Repair instead</h3><p>Fixes, salvage, odd tools, part numbers, lessons learned the hard way.</p></div>
+      <div class="card garden"><div class="emoji">🧠</div><h3>Personal AI lab</h3><p>Offline agents, prompt fragments, small models, experiments that actually ran.</p></div>
+      <div class="card garden"><div class="emoji">🐛</div><h3>Pointless creatures</h3><p>Tiny digital things made because joy is sufficient justification.</p></div>
+    </div>
+    <div class="card"><b>Garden rule</b><p class="postText">A useful post should not have to die in a timeline. Pin it, grow it, fork it, cite where it came from, and let someone else improve it.</p></div>
+  </div>
+
+  <div id="you" class="view">
+    <div class="sectionTitle"><h2>You own the trail</h2><small>prototype controls</small></div>
+    <div class="card">
+      <div class="postHead"><div class="avatar">🧑‍🔧</div><div class="who"><b>Your field</b><span>identity lives with you</span></div><span class="badge">portable</span></div>
+      <p class="postText">A production identity could move between OpenField clients. Your posts, follows, gardens and AI preferences should be exportable in boring, readable formats.</p>
+      <div class="dataBox"><button class="secondary" id="exportBtn">Export my data</button><button class="secondary" id="resetBtn">Reset demo</button></div>
+    </div>
+    <div class="card"><b>What this prototype refuses to optimize</b><p class="postText">Time-on-app. Rage. Compulsive refreshing. Public follower scores. Ad targeting. Engagement at any cost.</p><p class="fine">Those may be profitable metrics. They are not the same thing as a healthy network.</p></div>
+  </div>
+</div>
+
+<nav class="nav" aria-label="Main navigation">
+  <button class="active" data-view="home"><span>⌂</span>Field</button>
+  <button data-view="compose"><span>＋</span>Plant</button>
+  <button data-view="gardens"><span>❖</span>Gardens</button>
+  <button data-view="you"><span>◉</span>You</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+const basePosts=[
+ {id:1,avatar:'🔧',name:'Mara',handle:'@mara.forge',badge:'source attached',text:'I rebuilt a dead shop fan with a salvaged motor controller. Here are the measurements, wiring notes, and the two mistakes that cost me an hour.',tags:['useful','builders'],labels:['repair','open notes']},
+ {id:2,avatar:'🍅',name:'Devon',handle:'@devon.grows',badge:'local',text:'My cherry tomatoes tolerated the heat better after I shaded the west side only. Posting the temperature log + soil moisture so somebody else can test it instead of taking my word for it.',tags:['useful','plants','local'],labels:['garden','field note']},
+ {id:3,avatar:'🧠',name:'Inez',handle:'@inez.local',badge:'forkable',text:'Tiny offline language model experiment: phone A delegates summarization to phone B over a local connection. Ugly prototype. It works. Repo + failure notes are open.',tags:['useful','builders','play'],labels:['AI','prototype']},
+ {id:4,avatar:'🐛',name:'Blackboxkid',handle:'@bbk',badge:'joy only',text:'Made a digital beetle that becomes offended when you tap the glass. There is no roadmap. There will never be a roadmap.',tags:['play'],labels:['toy','creature']},
+ {id:5,avatar:'🧭',name:'Samir',handle:'@samir.questions',badge:'good-faith dissent',text:'Counterpoint: fully open systems can still concentrate power if compute, discovery, or identity infrastructure is scarce. I wrote down three failure modes and possible countermeasures.',tags:['contrarian','useful'],labels:['discussion','systems']},
+ {id:6,avatar:'📚',name:'Lena',handle:'@lena.notes',badge:'gardened',text:'Turned six months of short posts about composting into one maintained guide. Corrections stay attached to the claim they changed, so the history is visible without becoming clutter.',tags:['plants','useful'],labels:['knowledge garden','compost']}
+];
+const state=JSON.parse(localStorage.getItem('openfield-state')||'null')||{filters:['useful','builders'],posts:[]};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function save(){localStorage.setItem('openfield-state',JSON.stringify(state))}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+function renderFeed(){
+ const all=[...state.posts,...basePosts];
+ let chosen=all.filter(p=>p.tags.some(t=>state.filters.includes(t)));
+ if(!chosen.length) chosen=all;
+ chosen.sort((a,b)=>score(b)-score(a));
+ $('#feed').innerHTML=chosen.map(postHTML).join('');
+ $('#feedNote').textContent=`${chosen.length} posts • counts hidden`;
+}
+function score(p){return p.tags.reduce((n,t)=>n+(state.filters.includes(t)?2:0),0)+(p.tags.includes('useful')?1:0)}
+function postHTML(p){return `<article class="card"><div class="postHead"><div class="avatar">${p.avatar}</div><div class="who"><b>${p.name}</b><span>${p.handle}</span></div><span class="badge">${p.badge}</span></div><div class="postText">${escapeHtml(p.text)}</div><div class="meta">${p.labels.map(x=>`<span class="tag">${escapeHtml(x)}</span>`).join('')}</div><div class="actions"><button onclick="softAction('Saved locally')">◇ save</button><button onclick="softAction('Thread summarized by your AI')">✦ summarize</button><button onclick="softAction('Source trail opened')">↗ sources</button><button onclick="softAction('Reply composer opened')">↩ reply</button></div></article>`}
+function softAction(m){toast(m)} window.softAction=softAction;
+function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+$$('.filter').forEach(b=>{b.classList.toggle('active',state.filters.includes(b.dataset.filter));b.onclick=()=>{const f=b.dataset.filter;state.filters=state.filters.includes(f)?state.filters.filter(x=>x!==f):[...state.filters,f];b.classList.toggle('active');save();renderFeed()}})
+$$('.nav button').forEach(b=>b.onclick=()=>{$$('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.view').forEach(v=>v.classList.remove('active'));$('#'+b.dataset.view).classList.add('active');window.scrollTo({top:0,behavior:'smooth'})})
+$('#aiToggle').onclick=()=>{$('#aiPanel').classList.toggle('open');if($('#aiPanel').classList.contains('open'))$('#aiInput').focus()}
+$('#aiAsk').onclick=()=>{const q=$('#aiInput').value.trim();if(!q)return;const r=$('#aiReply');r.style.display='block';const low=q.toLowerCase();let answer='I would search people, gardens and posts you can verify, then rank them using your preferences rather than a global engagement score.';if(low.includes('offline')||low.includes('ai'))answer='I found 3 strong leads in your field: Inez’s phone-to-phone delegation prototype, a knowledge garden on small on-device models, and a local mesh experiment. I would show the source trail before recommending any of them.';else if(low.includes('plant')||low.includes('garden'))answer='I found practical growers first: field notes with measurements, maintained guides, and people near your region. I filtered out repost-only accounts and unsourced miracle claims.';else if(low.includes('different')||low.includes('opposing'))answer='I can deliberately widen your field without feeding you ragebait. I would surface good-faith arguments that disagree with your current follows, with the strongest supporting sources attached.';r.textContent=answer}
+const draft=$('#draft');draft.oninput=()=>{$('#draftMeta').textContent=`${draft.value.length} chars • local draft`}
+$$('.assist button').forEach(b=>b.onclick=()=>{const text=draft.value.trim();if(!text){toast('Write something first');return} const m=b.dataset.mode;if(m==='short')draft.value=text.split(/(?<=[.!?])\s+/).slice(0,2).join(' ');if(m==='clear')draft.value=text.replace(/\b(really|very|just|basically|actually)\b/gi,'').replace(/\s{2,}/g,' ').trim();if(m==='kind')draft.value=text.replace(/\b(idiot|stupid|dumb)\b/gi,'unhelpful').replace(/!{2,}/g,'!');if(m==='guide')draft.value=`Tiny guide\n\nGoal: ${text}\n\n1. What I tried\n2. What happened\n3. What I would change\n4. What someone else should test next`;draft.dispatchEvent(new Event('input'));toast('Your AI edited the local draft')})
+$('#postBtn').onclick=()=>{const text=draft.value.trim();if(!text){toast('Nothing planted yet');return}state.posts.unshift({id:Date.now(),avatar:'🧑‍🔧',name:'You',handle:'@you',badge:'your post',text,tags:['useful','builders'],labels:['new','portable']});draft.value='';draft.dispatchEvent(new Event('input'));save();renderFeed();document.querySelector('[data-view="home"]').click();toast('Planted in your field')}
+$('#exportBtn').onclick=()=>{const data={app:'OpenField alpha',version:1,exported:new Date().toISOString(),preferences:{filters:state.filters},posts:state.posts};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='openfield-export.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast('Portable JSON exported')}
+$('#resetBtn').onclick=()=>{localStorage.removeItem('openfield-state');location.reload()}
+renderFeed();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+</script>
+</body>
+</html>
