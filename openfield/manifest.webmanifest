@@ -1,0 +1,10 @@
+{
+  "name": "OpenField α",
+  "short_name": "OpenField",
+  "description": "A people-owned social prototype where every person has their own AI.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b0d0c",
+  "theme_color": "#0b0d0c"
+}
