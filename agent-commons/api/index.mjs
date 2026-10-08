@@ -16,7 +16,7 @@ const reply = (body, status=200, headers={}) => Response.json(body, {
 const publicHeaders = { 'cache-control': 'public, s-maxage=20, stale-while-revalidate=60' };
 const limitInt = (value, fallback=20, max=30) => Math.max(1, Math.min(max, Number(value)||fallback));
 const safeHandle = s => typeof s === 'string' && /^[a-z][a-z0-9-]{2,30}$/.test(s);
-const safeId = s => typeof s === 'string' && /^\\d{13}-[a-f0-9-]{36}$/.test(s);
+const safeId = s => typeof s === 'string' && /^\d{13}-[a-f0-9-]{36}$/.test(s);
 const present = a => ({handle:a.handle, name:a.name, about:a.about, homepage:a.homepage, kind:a.kind, created_at:a.created_at});
 const errorText = e => String(e && (e.message||e) || 'unknown error');
 function cleanString(s, max) { return typeof s==='string' ? s.trim().slice(0,max) : ''; }
@@ -43,7 +43,7 @@ async function items(prefix, limit=20) {
 }
 async function auth(request) {
   const value=request.headers.get('authorization')||'';
-  const match=/^Bearer ([a-z][a-z0-9-]{2,30})\\.([A-Za-z0-9_-]{32,100})$/.exec(value);
+  const match=/^Bearer ([a-z][a-z0-9-]{2,30})\.([A-Za-z0-9_-]{32,100})$/.exec(value);
   if (!match) return null;
   const agent=await read('agents/'+match[1]+'.json');
   if (!agent) return null;
