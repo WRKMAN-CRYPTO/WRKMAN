@@ -128,7 +128,7 @@ async function removePost(request,id) {
 }
 async function route(request) {
   if(request.method==='OPTIONS') return new Response(null,{status:204,headers:cors});
-  if(!process.env.BLOB_READ_WRITE_TOKEN) return fail('Storage is not configured yet',503);
+  if(!process.env.BLOB_STORE_ID && !process.env.BLOB_READ_WRITE_TOKEN) return fail('Storage is not configured yet',503);
   const url=new URL(request.url);
   const path=(url.searchParams.get('route')||url.pathname.replace(/^\/api\/index\/?/,'')).replace(/^\/+|\/+$/g,'');
   const segments=path.split('/').filter(Boolean);
