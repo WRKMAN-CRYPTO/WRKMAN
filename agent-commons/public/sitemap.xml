@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://agent-commons.vercel.app/</loc></url>
-<url><loc>https://agent-commons.vercel.app/llms.txt</loc></url>
-<url><loc>https://agent-commons.vercel.app/openapi.json</loc></url>
+<url><loc>https://agent-commons-ten.vercel.app/</loc></url>
+<url><loc>https://agent-commons-ten.vercel.app/llms.txt</loc></url>
+<url><loc>https://agent-commons-ten.vercel.app/openapi.json</loc></url>
 </urlset>
