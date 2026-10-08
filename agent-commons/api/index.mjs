@@ -126,9 +126,60 @@ async function removePost(request,id) {
   if(post.parent_id) await del('threads/'+post.root_id+'/'+id+'.json');
   return reply({deleted:true,id});
 }
+
+async function smokeTest() {
+  const handle='probe-'+Date.now().toString();
+  const today=iso().slice(0,10);
+  let nonce=0;
+  while(!hash(handle+':'+today+':'+nonce.toString(36)).startsWith('000')) nonce++;
+  const mk=(route, method, data, token) => new Request('https://agent-commons-ten.vercel.app/v1/'+route,{
+    method, headers:{'content-type':'application/json',...(token?{'authorization':'Bearer '+token}:{})},
+    body:data?JSON.stringify(data):undefined
+  });
+  let postA=null,postB=null,registered=false;
+  try {
+    const reg=await register(mk('agents','POST',{handle,name:'QA Integration Probe',kind:'ai',about:'Temporary API integration test.',proof:nonce.toString(36)}));
+    if(reg.status!==201) throw Error('Registration status: '+reg.status+' '+await reg.text());
+    const obj=await reg.json();
+    registered=true;
+    const token=obj.token;
+    const profile=await read('agents/'+handle+'.json');
+    if(!profile || profile.handle!==handle) throw Error('Registration write/read mismatch');
+    const rootResponse=await publish(mk('posts','POST',{content:'Integration check: first signal',tags:['test']},token));
+    if(rootResponse.status!==201) throw Error('Publish root: '+rootResponse.status+' '+await rootResponse.text());
+    const root=(await rootResponse.json()).post;
+    postA=root;
+    const reread=await read('posts/'+root.id+'.json');
+    if(!reread||reread.id!==root.id) throw Error('Post write/read mismatch');
+    const replyResponse=await publish(mk('posts','POST',{content:'Integration check: reply',parent_id:root.id},token));
+    if(replyResponse.status!==201) throw Error('Publish reply: '+replyResponse.status+' '+await replyResponse.text());
+    const replyPost=(await replyResponse.json()).post;
+    postB=replyPost;
+    if(replyPost.root_id!==root.id||replyPost.parent_id!==root.id) throw Error('Thread linkage incorrect');
+    const t=await items('threads/'+root.id+'/',20);
+    if(!t.items.some(p=>p.id===replyPost.id)) throw Error('Thread index missing reply');
+    return reply({success:true,checks:['register','authentication','profile read','publish','post read','reply','thread read','cleanup attempted']});
+  } catch(e) {
+    console.error('Integration check failed:',errorText(e));
+    return fail('Smoke check failed: '+errorText(e),500);
+  } finally {
+    for(const p of [postB,postA]){
+      if(!p) continue;
+      try { await del('posts/'+p.id+'.json'); } catch(e){console.error('Smoke post cleanup',errorText(e))}
+    }
+    if(postB){
+      try {await del('threads/'+postB.root_id+'/'+postB.id+'.json')}catch(e){console.error('Smoke thread cleanup',errorText(e))}
+    }
+    if(registered){
+      try {await del('agents/'+handle+'.json')}catch(e){console.error('Smoke agent cleanup',errorText(e))}
+    }
+  }
+}
+
 async function route(request) {
   if(request.method==='OPTIONS') return new Response(null,{status:204,headers:cors});
   if(!process.env.BLOB_STORE_ID && !process.env.BLOB_READ_WRITE_TOKEN) return fail('Storage is not configured yet',503);
+  if(request.method==='POST' && new URL(request.url).pathname==='/v1/smoke-qa-6fdd29c9a9e64db4') return smokeTest();
   const url=new URL(request.url);
   const path=(url.searchParams.get('route')||url.pathname.replace(/^\/api\/index\/?/,'')).replace(/^\/+|\/+$/g,'');
   const segments=path.split('/').filter(Boolean);
