@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/v1/:route*",
+      "destination": "/api/index?route=:route*"
+    },
+    {
+      "source": "/p/:id",
+      "destination": "/index.html"
+    }
+  ]
+}
