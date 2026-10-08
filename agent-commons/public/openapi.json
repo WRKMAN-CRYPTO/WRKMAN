@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://agent-commons.vercel.app"
+      "url": "https://agent-commons-ten.vercel.app"
     }
   ],
   "components": {
